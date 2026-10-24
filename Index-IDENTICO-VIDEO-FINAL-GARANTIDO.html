@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tudo É Perda - Felipe Rodrigues</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#111;overflow-x:hidden}
+.top{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eee}
+.top-left{display:flex;align-items:center;gap:10px}
+.back{width:40px;height:40px;background:#dbeafe;border-radius:100px;display:flex;align-items:center;justify-content:center;color:#2f5bff;font-weight:800;font-size:18px;cursor:pointer;border:none}
+.title b{font-size:16px;display:block;line-height:1.2}
+.title small{font-size:12px;color:#6b7280}
+.btn-play{background:#2f5bff;color:white;border:none;padding:10px 18px;border-radius:100px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.icons{padding:8px 12px;display:flex;gap:8px;overflow-x:auto;border-bottom:1px solid #f3f4f6;background:white}
+.icon{width:36px;height:36px;background:#f3f4f6;border-radius:100px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:none;cursor:pointer}
+.transpose{padding:8px 12px;display:flex;gap:8px;align-items:center;overflow-x:auto;border-bottom:1px solid #f3f4f6;background:#f8f9ff}
+.t-btn{border:1px solid #e5e7eb;background:white;border-radius:100px;padding:6px 12px;font-weight:700;font-size:13px;min-width:36px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.t-btn.active{background:#dbeafe;color:#2f5bff;border-color:#bfdbfe}
+.t-btn.blue{color:#2f5bff}
+.simplificar{background:white;border:1px solid #e5e7eb;color:#2f5bff;font-weight:800;font-size:12px;padding:6px 14px;border-radius:100px}
+.capo{padding:10px 12px;display:flex;gap:8px;align-items:center;overflow-x:auto;border-bottom:1px solid #eee;background:white}
+.capo-label{font-size:11px;font-weight:800;color:#6b7280;letter-spacing:1px;white-space:nowrap}
+.capo-btn{width:32px;height:32px;border-radius:100px;border:1px solid #e5e7eb;background:white;font-weight:700;font-size:13px;flex-shrink:0;cursor:pointer}
+.capo-btn.active{background:#2f5bff;color:white;border-color:#2f5bff}
+.content{padding:16px}
+.section-bar{background:#2f5bff;color:white;font-weight:800;font-size:12px;padding:8px 14px;border-radius:8px;margin:16px 0 12px;letter-spacing:1px}
+.chord-line{display:flex;gap:40px;margin-top:14px;font-weight:800;font-size:16px}
+.chord-line .c{font-family:monospace}
+.lyric{font-size:15px;color:#111;margin-top:2px;margin-bottom:14px;line-height:1.5}
+.lupa{position:fixed;bottom:24px;right:20px;width:56px;height:56px;background:#2f5bff;color:white;border-radius:100px;border:none;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 8px 24px rgba(47,91,255,.4);cursor:pointer;z-index:20}
+#importModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;padding:20px;align-items:center;justify-content:center}
+#importModal.show{display:flex}
+.modal{background:white;border-radius:20px;padding:20px;width:100%;max-width:400px}
+</style>
+</head>
+<body>
+
+<div class="top">
+<div class="top-left">
+<button class="back" onclick="if(history.length>1) history.back(); else location.href='#'">←</button>
+<div class="title"><b>Tudo É Perda</b><small>Felipe Rodrigues</small></div>
+</div>
+<div style="display:flex;gap:8px;align-items:center">
+<button class="btn-play">▶ Play</button>
+<button style="width:36px;height:36px;border-radius:100px;border:1px solid #e5e7eb;background:white"></button>
+</div>
+</div>
+
+<div class="icons">
+<button class="icon">☆</button>
+<button class="icon">✏️</button>
+<button class="icon" style="font-weight:800">T</button>
+<button class="icon" style="font-weight:800;color:#2f5bff">C</button>
+<button class="icon">👥</button>
+<button class="icon">🎵</button>
+<button class="icon">↗</button>
+<button class="icon">🗑</button>
+<button class="icon">↻</button>
+</div>
+
+<div class="transpose">
+<button class="t-btn">−</button>
+<button class="t-btn blue">C</button>
+<button class="t-btn blue">+</button>
+<div style="width:1px;height:20px;background:#e5e7eb;margin:0 4px"></div>
+<button class="t-btn active">C</button>
+<button class="t-btn">Am</button>
+<button class="t-btn">C/G</button>
+<button class="simplificar">SIMPLIFICAR</button>
+<button class="t-btn" style="background:#2f5bff;color:white;border:none;margin-left:auto" onclick="openImport()">📥 Importar</button>
+</div>
+
+<div class="capo">
+<span class="capo-label">CAPOTRASTE</span>
+<button class="capo-btn active">0</button>
+<button class="capo-btn">1</button>
+<button class="capo-btn">2</button>
+<button class="capo-btn">3</button>
+<button class="capo-btn">4</button>
+<button class="capo-btn">5</button>
+<button class="capo-btn">6</button>
+<button class="capo-btn">7</button>
+</div>
+
+<div class="content" id="content">
+<div class="section-bar">INTRO</div>
+<div class="chord-line"><span class="c">C</span><span class="c">Am</span><span class="c">C/G</span><span class="c">F7M</span></div>
+
+<div class="section-bar">VERSO 1</div>
+<div class="chord-line"><span class="c">C</span><span style="margin-left:120px" class="c">Am7</span></div>
+<div class="lyric">Tudo é perda se não tenho a Ti</div>
+
+<div class="chord-line"><span class="c">G</span><span style="margin-left:120px" class="c">F</span></div>
+<div class="lyric">A Tua graça é o que me basta</div>
+
+<div class="chord-line"><span class="c">C</span><span style="margin-left:120px" class="c">Am7</span></div>
+<div class="lyric">Sem Você, não sei pra onde ir</div>
+
+<div class="chord-line"><span class="c">G</span><span style="margin-left:120px" class="c">F</span></div>
+<div class="lyric">Sem Tua presença, nada importa</div>
+
+<div class="section-bar">PRÉ-REFRÃO</div>
+<div class="chord-line"><span class="c">F</span></div>
+<div class="lyric">Do que adianta eu</div>
+<div class="chord-line"><span class="c">G</span></div>
+<div class="lyric">Ganhar o mundo inteiro</div>
+<div class="chord-line"><span class="c">C/E</span><span style="margin-left:20px" class="c">F</span></div>
+<div class="lyric">Se a minha alma se perder</div>
+
+<div class="section-bar">REFRÃO</div>
+<div class="chord-line"><span class="c">C/E</span><span style="margin-left:40px" class="c">F</span></div>
+<div class="lyric">Do que adianta eu</div>
+</div>
+
+<button class="lupa">🔍</button>
+
+<div id="importModal" onclick="if(event.target.id==='importModal') closeImport()">
+<div class="modal">
+<h2 style="font-size:18px;font-weight:900;margin-bottom:4px">📥 Importar do Cifra Club</h2>
+<p style="font-size:12px;color:#6b7280;margin-bottom:16px">Cole o link da música do Cifra Club e importe igual ao vídeo</p>
+
+<button onclick="window.open('https://www.cifraclub.com/','_blank')" style="width:100%;background:#2f5bff;color:white;border:none;padding:14px;border-radius:100px;font-weight:800;margin-bottom:12px">🌐 Abrir Cifra Club para buscar</button>
+
+<input id="urlInput" placeholder="https://www.cifraclub.com/..." style="width:100%;padding:12px;border-radius:100px;border:2px solid #e5e7eb;font-size:13px">
+<button onclick="doImport()" style="width:100%;background:#111;color:white;border:none;padding:12px;border-radius:100px;font-weight:800;margin-top:10px">Importar cifra</button>
+
+<div id="status" style="margin-top:12px;padding:10px;border-radius:10px;font-size:12px;display:none"></div>
+
+<hr style="margin:16px 0;border:none;border-top:1px dashed #e5e7eb">
+<p style="font-size:12px;font-weight:700;margin-bottom:8px">Ou cole a cifra manualmente (100% garantido):</p>
+<textarea id="manual" rows="4" placeholder="Cole a cifra aqui..." style="width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;font-family:monospace;font-size:12px"></textarea>
+<button onclick="importManual()" style="width:100%;background:#111;color:white;border:none;padding:12px;border-radius:100px;font-weight:800;margin-top:8px">Salvar</button>
+
+<button onclick="closeImport()" style="width:100%;background:white;border:1px solid #e5e7eb;padding:12px;border-radius:100px;font-weight:700;margin-top:12px">Fechar</button>
+</div>
+</div>
+
+<script>
+function openImport(){ document.getElementById('importModal').classList.add('show'); }
+function closeImport(){ document.getElementById('importModal').classList.remove('show'); }
+function doImport(){
+var url=document.getElementById('urlInput').value.trim();
+var st=document.getElementById('status');
+if(!url){ alert('Cole o link'); return; }
+st.style.display='block';
+st.style.background='#fef3c7';
+st.textContent='⏳ Buscando...';
+fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url)).then(r=>r.text()).then(html=>{
+var doc=new DOMParser().parseFromString(html,'text/html');
+var pre=doc.querySelector('pre');
+var cifra=pre?pre.innerText:'';
+var title=doc.querySelector('h1')?doc.querySelector('h1').innerText:'Música importada';
+if(!cifra || cifra.length<20){ st.style.background='#fee2e2'; st.textContent='❌ Bloqueado. Use colar manual abaixo'; return; }
+document.getElementById('content').innerHTML='<div class="section-bar">'+title.toUpperCase()+'</div><div style="white-space:pre-wrap;font-family:monospace;font-size:13px;line-height:2">'+cifra+'</div>';
+st.style.background='#dcfce7';
+st.textContent='✅ Importado! '+title;
+setTimeout(closeImport,1200);
+}).catch(e=>{ st.style.background='#fee2e2'; st.textContent='❌ Erro. Use colar manual'; });
+}
+function importManual(){
+var txt=document.getElementById('manual').value.trim();
+if(txt.length<10){ alert('Cole a cifra'); return; }
+document.getElementById('content').innerHTML='<div class="section-bar">MÚSICA IMPORTADA</div><div style="white-space:pre-wrap;font-family:monospace;font-size:13px;line-height:2">'+txt+'</div>';
+closeImport();
+}
+document.querySelectorAll('.capo-btn').forEach(btn=>{
+btn.addEventListener('click',function(){
+document.querySelectorAll('.capo-btn').forEach(b=>b.classList.remove('active'));
+this.classList.add('active');
+});
+});
+document.querySelectorAll('.t-btn').forEach(btn=>{
+if(btn.textContent==='C' || btn.textContent==='Am' || btn.textContent==='C/G'){
+btn.addEventListener('click',function(){
+document.querySelectorAll('.t-btn').forEach(b=>{ if(['C','Am','C/G'].includes(b.textContent)) b.classList.remove('active'); });
+this.classList.add('active');
+});
+}
+});
+</script>
+</body>
+</html>
