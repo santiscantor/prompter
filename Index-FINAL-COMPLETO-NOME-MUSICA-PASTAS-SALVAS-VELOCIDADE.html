@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meu Repertório - Final Completo</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f6f7fb;--card:#fff;--text:#111;--border:#e5e7eb;--primary:#2f5bff}
+body.dark{--bg:#0f0f14;--card:#1a1a24;--text:#e5e7eb;--border:#2a2a3a;--primary:#5b7bff;background:#0f0f14;color:#e5e7eb}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text)}
+.screen{display:none;min-height:100vh;background:var(--bg)}
+.screen.active{display:block}
+.screen-song{background:var(--card);min-height:100vh}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:16px;position:sticky;top:0;z-index:20}
+.h1{font-size:18px;font-weight:900}
+.sub{font-size:11px;color:#6b7280}
+.btn{border:none;border-radius:100px;padding:11px 16px;font-weight:800;font-size:13px;cursor:pointer}
+.btn-blue{background:var(--primary);color:white}
+.btn-black{background:#111;color:white}
+body.dark .btn-black{background:#2a2a3a}
+.btn-white{background:var(--card);border:1px solid var(--border);color:var(--text)}
+.btn-banda{background:linear-gradient(135deg,#2f5bff,#7c3aed);color:white;padding:14px 18px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.btn-green{background:#10b981;color:white;padding:14px 18px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px}
+.folder{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:8px 14px;font-size:12px;font-weight:700;margin:3px;cursor:pointer;color:var(--text);position:relative}
+.folder.active{background:var(--primary);color:white;border-color:var(--primary)}
+.folder .del{margin-left:6px;background:rgba(0,0,0,.1);border-radius:100px;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px}
+.card{background:var(--card);border-radius:16px;padding:14px 16px;margin:8px 12px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer;color:var(--text)}
+.top{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:20}
+.back{width:36px;height:36px;background:#dbeafe;border-radius:100px;display:flex;align-items:center;justify-content:center;color:#2f5bff;font-weight:800;font-size:18px;border:none;cursor:pointer}
+.controls-bar{background:var(--card);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;gap:12px;align-items:center;overflow-x:auto;position:sticky;top:52px;z-index:18;flex-wrap:wrap}
+.ctrl-group{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:100px;padding:4px 8px;flex-shrink:0}
+.ctrl-label{font-size:9px;font-weight:800;letter-spacing:.6px;color:#6b7280}
+.ctrl-btn{width:32px;height:32px;border-radius:100px;border:1px solid var(--border);background:var(--card);font-weight:800;font-size:12px;cursor:pointer;color:var(--text)}
+.ctrl-btn.active{background:var(--primary);color:white;border-color:var(--primary)}
+.transpose{padding:8px 10px;display:flex;gap:6px;align-items:center;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:92px;z-index:17}
+.t-btn{border:1px solid var(--border);background:var(--card);border-radius:100px;padding:6px 12px;font-weight:700;font-size:12px;min-width:32px;cursor:pointer;flex-shrink:0;color:var(--text)}
+.t-btn.active{background:var(--primary);color:white}
+.capo{padding:8px 10px;display:flex;gap:6px;align-items:center;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:128px;z-index:16}
+.capo-btn{width:30px;height:30px;border-radius:100px;border:1px solid var(--border);background:var(--card);font-weight:700;font-size:11px;flex-shrink:0;cursor:pointer;color:var(--text)}
+.capo-btn.active{background:var(--primary);color:white}
+.content{padding:16px 16px 100px;background:var(--card);min-height:60vh;overflow:auto;max-height:calc(100vh - 220px)}
+.bar{background:var(--primary);color:white;font-weight:800;font-size:11px;padding:7px 12px;border-radius:7px;margin:16px 0 10px}
+.chord{font-weight:800;background:#eef2ff;color:#2f5bff;padding:2px 6px;border-radius:6px;font-family:monospace}
+body.dark .chord{background:#2a2a3a;color:#7b9bff}
+.banda-banner{background:linear-gradient(135deg,#2f5bff,#7c3aed);color:white;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:25}
+.live-dot{width:10px;height:10px;background:#ef4444;border-radius:100px;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#111;color:white;padding:10px 18px;border-radius:100px;font-size:12px;font-weight:700;z-index:200;display:none;max-width:90%;text-align:center}
+.toast.show{display:block}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;padding:16px;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--card);border-radius:20px;padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;border:1px solid var(--border)}
+.input{width:100%;padding:12px;border-radius:100px;border:2px solid var(--border);font-size:13px;outline:none;margin-top:8px;background:var(--card);color:var(--text)}
+.select{width:100%;padding:12px;border-radius:100px;border:2px solid var(--primary);font-size:13px;outline:none;margin-top:8px;background:var(--card);font-weight:700;color:var(--text)}
+.textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);font-family:monospace;font-size:12px;outline:none;margin-top:8px;background:var(--card);color:var(--text)}
+.status-box{padding:10px 12px;border-radius:10px;font-size:12px;font-weight:700;margin-top:8px}
+.status-ok{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+</style>
+</head>
+<body>
+
+<div id="screenList" class="screen active">
+<div class="header">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div><div class="h1">Meu Repertório</div><div class="sub">Final Completo • Tudo salvo</div></div>
+<button class="btn btn-white" style="padding:8px 12px;font-size:11px" onclick="toggleDark()">🌙 Noite</button>
+</div>
+<div id="authBox" style="margin-top:10px;padding:10px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
+<div style="display:flex;gap:6px"><input id="se" class="input" style="margin:0" placeholder="E-mail (qualquer)"><input id="sp" type="password" class="input" style="margin:0" placeholder="Senha 123456"></div>
+<div style="display:flex;gap:6px;margin-top:6px"><button class="btn btn-white" style="flex:1;font-size:11px;padding:8px" onclick="doLogin()">Entrar</button><button class="btn btn-white" style="flex:1;font-size:11px;padding:8px" onclick="doCreate()">Criar conta</button><button class="btn btn-black" id="sx" style="display:none;flex:1;font-size:11px;padding:8px" onclick="doLogout()">Sair</button><button class="btn btn-blue" id="anonBtn" style="flex:1;font-size:11px;padding:8px" onclick="doAnon()">1 clique</button></div>
+<small id="ss" style="font-size:10px;color:#6b7280;display:block;margin-top:4px">Clique "1 clique" para entrar rápido</small>
+</div>
+<div style="margin-top:12px">
+<button class="btn btn-banda" onclick="openBandModal()">🎸 MODO BANDA - Original Firebase</button>
+<span id="bandStatus" style="font-size:11px;color:#6b7280;margin-top:6px;display:block"></span>
+</div>
+
+<!-- BOTÃO CRIAR PASTAS -->
+<div style="display:flex;gap:6px;margin-top:12px">
+<input id="newFolderInput" class="input" style="flex:1;margin:0" placeholder="Nome da nova pasta (ex: Sertanejo, Louvor)">
+<button class="btn btn-blue" style="width:auto;padding:10px 16px" onclick="createFolder()">+ Pasta</button>
+</div>
+
+<div style="display:flex;gap:8px;margin-top:10px">
+<button class="btn btn-white" style="flex:1" onclick="openImportModal()">📥 Importar do cifra</button>
+<button class="btn btn-black" onclick="openNew()">+ Nova música</button>
+</div>
+<input id="search" placeholder="🔍 Buscar música..." style="width:100%;margin-top:12px;padding:11px 16px;border-radius:100px;border:1px solid var(--border);background:var(--bg);font-size:13px;outline:none;color:var(--text)" oninput="renderList()">
+</div>
+<div id="folderBar" style="padding:10px 12px 4px 12px;display:flex;flex-wrap:wrap"></div>
+<div id="list"></div>
+</div>
+
+<div id="bandModal" class="modal-bg" onclick="if(event.target.id==='bandModal') closeBandModal()">
+<div class="modal">
+<h3 style="margin:0 0 12px">🎸 Modo Banda - Firebase Original</h3>
+<div id="bandCreate">
+<button class="btn btn-banda" onclick="createRoom()" style="width:100%">Criar Sala (Você é o Líder)</button>
+<div style="height:12px"></div>
+<div style="display:flex;gap:6px"><input id="joinCode" class="input" placeholder="Código da sala (ex: AB12)" style="text-transform:uppercase;margin:0;flex:1"><button class="btn btn-green" style="width:auto;margin:0" onclick="joinRoom()">Entrar</button></div>
+<div style="margin:12px 0;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+<label style="font-size:12px;font-weight:700">Meu instrumento:</label>
+<select id="myInstrument" class="select" style="margin-top:6px">
+<option value="violao">🎸 Violão / Guitarra</option>
+<option value="baixo4">🎸 Baixo 4 cordas</option>
+<option value="baixo5">🎸 Baixo 5 cordas</option>
+</select>
+</div>
+</div>
+<div id="bandActive" style="display:none">
+<p style="font-size:14px">Código da sala: <b id="roomCodeDisplay" style="font-size:28px;letter-spacing:4px;color:var(--primary)"></b></p>
+<p style="font-size:12px;color:#6b7280;margin-top:6px">Mande esse código pros músicos.</p>
+<div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+<div style="display:flex;gap:6px">
+<input id="bandaLinkFirebase" class="input" style="margin:0;font-size:11px" readonly>
+<button class="btn btn-blue" style="width:auto;padding:8px 12px;font-size:11px" onclick="copyFirebaseLink()">Copiar</button>
+</div>
+<button class="btn btn-black" style="width:100%;margin-top:8px;padding:10px;font-size:11px" onclick="shareFirebaseWhatsApp()">📱 WhatsApp</button>
+</div>
+<button class="btn btn-white" style="width:100%;margin-top:12px" onclick="leaveRoom()">Sair da Sala</button>
+</div>
+<button class="btn btn-white" style="width:100%;margin-top:12px" onclick="closeBandModal()">Fechar</button>
+</div>
+</div>
+
+<div id="importModal" class="modal-bg" onclick="if(event.target.id==='importModal') closeImportModal()">
+<div class="modal">
+<h2 style="font-size:18px;font-weight:900">📥 Importar música</h2>
+
+<!-- NOVO: NOME DA MÚSICA -->
+<div style="background:var(--bg);border-radius:12px;padding:12px;margin:10px 0;border:2px solid var(--primary)">
+<b style="font-size:13px">🎵 Nome da música:</b>
+<input id="importTitle" class="input" placeholder="Ex: Evidências - Chitãozinho & Xororó" style="font-weight:700">
+<small style="font-size:10px;color:#6b7280;margin-top:4px;display:block">Digite o nome que vai aparecer na lista</small>
+</div>
+
+<div style="background:#fffbeb;border:2px solid #f59e0b;border-radius:12px;padding:12px;margin:10px 0">
+<b style="font-size:13px">📁 Em qual pasta salvar?</b>
+<select id="pastaSelect" class="select" style="border-color:#f59e0b"></select>
+<input id="novaPastaInput" class="input" style="display:none;margin-top:8px" placeholder="Nome da nova pasta">
+<small style="font-size:10px;color:#6b7280;display:block;margin-top:4px">Pastas ficam salvas mesmo saindo do app</small>
+</div>
+
+<div style="background:var(--bg);border-radius:14px;padding:14px;margin:10px 0;border-left:4px solid var(--primary)">
+<b style="font-size:13px">🔗 Opção 1 - Link direto do Cifra Club</b>
+<div style="display:flex;gap:6px;margin-top:10px">
+<input id="urlInput" class="input" style="flex:1;margin:0;font-size:12px" placeholder="https://www.cifraclub.com/...">
+<button class="btn btn-blue" style="width:auto;padding:10px 14px" onclick="doImportLink()">Baixar</button>
+</div>
+<div id="status" style="margin-top:8px;padding:8px;border-radius:8px;font-size:11px;display:none"></div>
+</div>
+
+<div style="background:var(--bg);border-radius:14px;padding:14px;margin:10px 0;border-left:4px solid #10b981">
+<b style="font-size:13px">📋 Opção 2 - Copiar e colar cifra</b>
+<textarea id="manual" class="textarea" rows="5" placeholder="Cole a cifra aqui...
+Ex:
+C  G  Am  F
+Minha música..."></textarea>
+<button class="btn btn-black" style="width:100%;margin-top:8px" onclick="importManual()">📋 Importar com nome e pasta acima</button>
+</div>
+
+<button class="btn btn-white" style="width:100%;margin-top:12px" onclick="closeImportModal()">Fechar</button>
+</div>
+</div>
+
+<div id="screenSong" class="screen screen-song">
+<div id="bandaBar" style="display:none;background:linear-gradient(135deg,#2f5bff,#7c3aed);color:white;padding:8px 16px;display:flex;justify-content:space-between;align-items:center">
+<div style="display:flex;align-items:center;gap:6px"><div class="live-dot"></div><small style="font-weight:800;font-size:11px" id="bandaBarText">MODO BANDA AO VIVO</small></div>
+<button class="btn btn-white" style="padding:4px 10px;font-size:10px" onclick="backFromSong()">Voltar</button>
+</div>
+<div class="top">
+<div style="display:flex;align-items:center;gap:10px">
+<button class="back" onclick="backFromSong()">←</button>
+<div><b id="songTitle" style="font-size:14px">Tudo É Perda</b><br><small id="songArtist" style="color:#6b7280;font-size:11px">Tom: C | Capo: 0</small></div>
+</div>
+<button class="btn btn-blue" id="playBtn" style="padding:8px 14px;font-size:12px" onclick="togglePlay()">▶ Play</button>
+</div>
+
+<!-- VELOCIDADE FUNCIONANDO -->
+<div class="controls-bar">
+<div class="ctrl-group">
+<span class="ctrl-label">⚡ VELOC</span>
+<button class="ctrl-btn" onclick="setSpeed(-1)">−</button>
+<span id="velDisplay" style="font-size:11px;font-weight:800;min-width:24px;text-align:center">5</span>
+<button class="ctrl-btn" onclick="setSpeed(1)">+</button>
+<small style="font-size:9px;color:#6b7280;margin-left:4px">Play</small>
+</div>
+<div class="ctrl-group">
+<span class="ctrl-label">🔤 FONTE</span>
+<button class="ctrl-btn" onclick="changeFontSize(-1)">A-</button>
+<span id="fontDisplay" style="font-size:11px;font-weight:800;min-width:32px;text-align:center">14px</span>
+<button class="ctrl-btn" onclick="changeFontSize(1)">A+</button>
+</div>
+<div class="ctrl-group">
+<span class="ctrl-label">🌙 TELA</span>
+<button class="ctrl-btn" id="nightBtn" onclick="toggleDark()">🌙 Noite</button>
+</div>
+</div>
+
+<div class="transpose">
+<button class="t-btn" onclick="changeTom(-1)">−</button>
+<button class="t-btn active" id="tomDisplay">C</button>
+<button class="t-btn" onclick="changeTom(1)">+</button>
+<span style="font-size:10px;color:#6b7280;margin-left:6px">Tom auto p/ banda</span>
+</div>
+<div class="capo">
+<span style="font-size:10px;font-weight:800;color:#6b7280">CAPOTRASTE</span>
+<div id="capoBtns" style="display:flex;gap:4px;margin-left:6px"></div>
+</div>
+<div class="content" id="songContent"></div>
+</div>
+
+<div id="editModal" class="modal-bg" onclick="if(event.target.id==='editModal') closeEdit()">
+<div class="modal">
+<h2>✏️ Editar música</h2>
+<input id="editTitle" class="input" placeholder="Título da música">
+<select id="editFolderSelect" class="select" style="border-color:var(--border)"></select>
+<textarea id="editCifra" class="textarea" rows="10"></textarea>
+<button class="btn btn-blue" onclick="saveEdit()">💾 Salvar</button>
+<button class="btn btn-white" onclick="closeEdit()">Cancelar</button>
+</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const FB={apiKey:"AIzaSyAC1PD0HuQo5Sn7jExU64iryVGdlqBNJIk",authDomain:"prompter-show.firebaseapp.com",projectId:"prompter-show",appId:"1:739990174045:web:fea2454e8d8b961f3850b4"};
+let usr=null, db=null, auth=null;
+firebase.initializeApp(FB);
+auth=firebase.auth();
+db=firebase.firestore();
+db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+
+const NOTAS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const MAP_B={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+function transposeChord(chord, steps){
+  let m=chord.match(/^([A-G][#b]?)(.*)$/);
+  if(!m) return chord;
+  let base=m[1];
+  if(MAP_B[base]) base=MAP_B[base];
+  let idx=NOTAS.indexOf(base);
+  if(idx===-1) return chord;
+  return NOTAS[(idx+steps+120)%12]+m[2];
+}
+
+let currentSong=null, currentTomSteps=0, currentCapo=0, currentFolder='Todas', isBandaMode=false, isPlaying=false, playInterval=null, fontSize=14, speed=5, isDark=false;
+let bandRoomRef=null, bandUnsub=null, isLeader=false, roomCode=null, isFollowing=false, ignoreBandScroll=false;
+let lastBandScroll=0;
+let folders=[];
+
+function saveLocal(){
+  localStorage.setItem('prompter_final_completo', JSON.stringify(songs));
+  localStorage.setItem('prompter_folders_final', JSON.stringify(folders));
+  // Também salva no Firebase se logado
+  if(usr && db){
+    try{
+      db.collection('users').doc(usr.uid).set({songs:songs,folders:folders,ts:Date.now()}, {merge:true});
+    }catch(e){}
+  }
+}
+function showToast(m){ let t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+function toggleDark(){ isDark=!isDark; document.body.classList.toggle('dark', isDark); localStorage.setItem('darkModeFinal',''+(isDark?1:0)); showToast(isDark?'🌙 Modo noturno':'☀️ Dia'); }
+
+function genCode(){ return Math.random().toString(36).substring(2,6).toUpperCase(); }
+function setBandStatus(t){ document.getElementById('bandStatus').textContent=t; }
+function openBandModal(){ document.getElementById('bandModal').classList.add('show'); }
+function closeBandModal(){ document.getElementById('bandModal').classList.remove('show'); }
+
+async function createRoom(){
+  if(!usr){ alert('Faça login primeiro (clique em 1 clique)'); return; }
+  roomCode=genCode();
+  isLeader=true;
+  isFollowing=false;
+  bandRoomRef=db.collection('bandRooms').doc(roomCode);
+  await bandRoomRef.set({owner:usr.uid,ownerEmail:usr.email||'anonimo',code:roomCode,created:Date.now(),currentSongId:null,title:null,fullText:null,scroll:0,play:false,vel:speed,trans:0,capo:0});
+  document.getElementById('roomCodeDisplay').textContent=roomCode;
+  document.getElementById('bandCreate').style.display='none';
+  document.getElementById('bandActive').style.display='block';
+  document.getElementById('bandaLinkFirebase').value=location.origin+location.pathname+'?banda='+roomCode;
+  setBandStatus('🟢 Líder - Sala '+roomCode);
+  listenBand();
+}
+
+async function joinRoom(){
+  if(!usr){ alert('Faça login primeiro'); return; }
+  let codeInput=document.getElementById('joinCode').value.trim().toUpperCase();
+  if(!codeInput){
+    let params=new URLSearchParams(location.search);
+    codeInput=(params.get('banda')||'').toUpperCase();
+  }
+  if(!codeInput){ alert('Digite código'); return; }
+  if(codeInput.includes('BANDA=')){ let m=codeInput.match(/BANDA=([^&]+)/i); if(m) codeInput=m[1].toUpperCase(); }
+  codeInput=codeInput.replace(/[^A-Z0-9]/g,'').substring(0,6);
+  const doc=await db.collection('bandRooms').doc(codeInput).get();
+  if(!doc.exists){ alert('Sala não encontrada: '+codeInput); return; }
+  roomCode=codeInput;
+  isLeader=false;
+  isFollowing=true;
+  bandRoomRef=db.collection('bandRooms').doc(roomCode);
+  document.getElementById('roomCodeDisplay').textContent=roomCode;
+  document.getElementById('bandCreate').style.display='none';
+  document.getElementById('bandActive').style.display='block';
+  document.getElementById('bandaLinkFirebase').value=location.origin+location.pathname+'?banda='+roomCode;
+  setBandStatus('🔵 Conectado sala '+roomCode);
+  listenBand();
+  closeBandModal();
+}
+
+async function leaveRoom(){
+  if(bandUnsub) bandUnsub();
+  if(isLeader && bandRoomRef){ try{ await bandRoomRef.delete(); }catch(e){} }
+  bandRoomRef=null; bandUnsub=null; isLeader=false; isFollowing=false; roomCode=null;
+  document.getElementById('bandCreate').style.display='block';
+  document.getElementById('bandActive').style.display='none';
+  closeBandModal();
+  setBandStatus('');
+  document.getElementById('bandaBar').style.display='none';
+  isBandaMode=false;
+}
+
+function listenBand(){
+  if(bandUnsub) bandUnsub();
+  bandUnsub=bandRoomRef.onSnapshot(snap=>{
+    if(!snap.exists){ if(isFollowing){ alert('Líder encerrou sala'); leaveRoom(); } return; }
+    const d=snap.data();
+    if(isLeader) return;
+    if(d.currentSongId){
+      const song=songs.find(x=>x.id==d.currentSongId) || songs.find(x=>String(x.id)===String(d.currentSongId));
+      if(song && (!currentSong || currentSong.id!=song.id)){
+        openSongFirebase(song, d);
+      } else if(d.fullText){
+        const temp={id:d.currentSongId,title:d.title||'Música da banda',cifra:d.fullText,folder:'Banda',artist:'Banda'};
+        currentSong=temp;
+        currentTomSteps=d.trans||0;
+        currentCapo=d.capo||0;
+        speed=d.vel||5;
+        document.getElementById('songTitle').textContent=temp.title;
+        document.getElementById('songArtist').textContent=`Banda • Tom: ${NOTAS[(0+currentTomSteps+120)%12]} | Capo: ${currentCapo}`;
+        document.getElementById('tomDisplay').textContent=NOTAS[(0+currentTomSteps+120)%12];
+        document.getElementById('velDisplay').textContent=speed;
+        renderCapo(); renderSongFirebase();
+        document.getElementById('screenList').classList.remove('active');
+        document.getElementById('screenSong').classList.add('active');
+        document.getElementById('bandaBar').style.display='flex';
+        isBandaMode=true;
+      }
+    }
+    if(typeof d.scroll==='number'){
+      let sc=document.getElementById('songContent');
+      if(sc && Math.abs(sc.scrollTop - d.scroll) > 15){
+        ignoreBandScroll=true;
+        sc.scrollTop=d.scroll;
+        setTimeout(()=>ignoreBandScroll=false,200);
+      }
+    }
+    if(typeof d.play==='boolean'){
+      if(d.play!=isPlaying){
+        setPlayFirebase(d.play);
+      }
+    }
+    if(typeof d.vel==='number' && d.vel!=speed){
+      speed=d.vel;
+      document.getElementById('velDisplay').textContent=speed;
+    }
+  });
+}
+
+function copyFirebaseLink(){ let inp=document.getElementById('bandaLinkFirebase'); inp.select(); document.execCommand('copy'); showToast('Link copiado!'); }
+function shareFirebaseWhatsApp(){ let link=document.getElementById('bandaLinkFirebase').value; let code=document.getElementById('roomCodeDisplay').textContent; let msg=encodeURIComponent('🎸 Entra na banda! Código: '+code+' - Link: '+link); window.open('https://wa.me/?text='+msg,'_blank'); }
+
+function doLogin(){ let email=document.getElementById('se').value.trim(); let pass=document.getElementById('sp').value; if(!email||!pass){ showToast('Digite e-mail e senha ou clique 1 clique'); return; } auth.signInWithEmailAndPassword(email,pass).catch(e=>{ showToast('Erro: '+e.message); }); }
+function doCreate(){ let email=document.getElementById('se').value.trim(); let pass=document.getElementById('sp').value; if(!email||!pass){ email='banda'+Math.random().toString(36).substring(2,6)+'@teste.com'; pass='123456'; document.getElementById('se').value=email; document.getElementById('sp').value=pass; } auth.createUserWithEmailAndPassword(email,pass).catch(e=>{ if(e.code==='auth/email-already-in-use'){ auth.signInWithEmailAndPassword(email,pass); }else{ showToast('Erro: '+e.message); } }); }
+function doAnon(){ auth.signInAnonymously().catch(()=>{ doCreate(); }); }
+function doLogout(){ auth.signOut(); }
+
+auth.onAuthStateChanged(async u=>{
+  usr=u;
+  if(u){
+    document.getElementById('se').style.display='none';
+    document.getElementById('sp').style.display='none';
+    document.querySelectorAll('#authBox button')[0].style.display='none';
+    document.querySelectorAll('#authBox button')[1].style.display='none';
+    document.getElementById('anonBtn').style.display='none';
+    document.getElementById('sx').style.display='block';
+    document.getElementById('ss').textContent='Logado: '+(u.email||'anônimo')+' - Tudo salvo na nuvem';
+    // Carrega pastas e músicas da nuvem se existirem
+    try{
+      let doc=await db.collection('users').doc(u.uid).get();
+      if(doc.exists){
+        let data=doc.data();
+        if(data.folders && data.folders.length>0){
+          folders=data.folders;
+          localStorage.setItem('prompter_folders_final', JSON.stringify(folders));
+        }
+        if(data.songs && data.songs.length>0){
+          // Mescla com local, priorizando nuvem
+          songs=data.songs;
+          localStorage.setItem('prompter_final_completo', JSON.stringify(songs));
+        }
+      }
+    }catch(e){}
+    renderFolders();
+    renderList();
+    setBandStatus('Logado: '+(u.email||'anônimo')+' - Pastas e músicas salvas');
+  }else{
+    document.getElementById('se').style.display='block';
+    document.getElementById('sp').style.display='block';
+    document.querySelectorAll('#authBox button')[0].style.display='block';
+    document.querySelectorAll('#authBox button')[1].style.display='block';
+    document.getElementById('anonBtn').style.display='block';
+    document.getElementById('sx').style.display='none';
+    document.getElementById('ss').textContent='Clique "1 clique" para entrar - pastas salvas localmente';
+    setBandStatus('');
+  }
+});
+
+var songs=[];
+try{ songs=JSON.parse(localStorage.getItem('prompter_final_completo')||'[]'); }catch(e){}
+try{ folders=JSON.parse(localStorage.getItem('prompter_folders_final')||'[]'); }catch(e){}
+if(folders.length===0){
+  folders=['Sertanejo','Gospel','Pop Rock','Axé','Importadas'];
+}
+if(songs.length===0){
+  songs=[
+    {id:1,title:'Até Você Voltar',artist:'Sertanejo',folder:'Sertanejo',cifra:'[INTRO]\nC  G  Am  F\n\n[VERSO 1]\nC\nAté você voltar'},
+    {id:2,title:'Tudo É Perda',artist:'Felipe Rodrigues',folder:'Gospel',cifra:'C  Am  C/G  F7M\n\n[INTRO]\nC  Am  C/G  F7M\n\n[VERSO 1]\nC                Am7\nTudo é perda se não tenho a Ti'},
+  ];
+}
+if(localStorage.getItem('darkModeFinal')==='1'){ isDark=true; document.body.classList.add('dark'); }
+
+function createFolder(){
+  let name=document.getElementById('newFolderInput').value.trim();
+  if(!name){ alert('Digite nome da pasta'); return; }
+  if(folders.includes(name)){ alert('Pasta já existe'); return; }
+  folders.push(name);
+  saveLocal();
+  renderFolders();
+  document.getElementById('newFolderInput').value='';
+  showToast('📁 Pasta "'+name+'" criada e salva!');
+  // atualiza selects
+  updateFolderSelects();
+}
+
+function deleteFolder(name){
+  if(!confirm('Excluir pasta "'+name+'"? Músicas vão para "Importadas"')) return;
+  folders=folders.filter(f=>f!==name);
+  // move músicas da pasta excluída para Importadas
+  songs.forEach(s=>{ if(s.folder===name) s.folder='Importadas'; });
+  if(currentFolder===name) currentFolder='Todas';
+  saveLocal();
+  renderFolders();
+  renderList();
+  showToast('Pasta excluída');
+}
+
+function renderFolders(){
+  let bar=document.getElementById('folderBar');
+  bar.innerHTML='';
+  let allFolders=['Todas',...folders];
+  allFolders.forEach(f=>{
+    let div=document.createElement('div');
+    div.className='folder'+(f===currentFolder?' active':'');
+    div.dataset.f=f;
+    if(f==='Todas'){
+      div.textContent='Todas';
+    }else{
+      div.innerHTML=`${f} <span class="del" onclick="event.stopPropagation(); deleteFolder('${f.replace(/'/g,"\\'")}')">✕</span>`;
+    }
+    div.onclick=()=>filterFolder(f);
+    bar.appendChild(div);
+  });
+  updateFolderSelects();
+}
+
+function updateFolderSelects(){
+  let selects=[document.getElementById('pastaSelect'), document.getElementById('editFolderSelect')];
+  selects.forEach(sel=>{
+    if(!sel) return;
+    let currentVal=sel.value;
+    sel.innerHTML='';
+    folders.forEach(f=>{
+      let opt=document.createElement('option');
+      opt.value=f;
+      opt.textContent=f;
+      sel.appendChild(opt);
+    });
+    sel.innerHTML+='<option value="__nova__">+ Criar nova pasta...</option>';
+    // tenta restaurar valor
+    if(currentVal && [...sel.options].some(o=>o.value===currentVal)){
+      sel.value=currentVal;
+    }
+  });
+}
+
+function getSelectedFolder(){
+  let sel=document.getElementById('pastaSelect');
+  let val=sel.value;
+  if(val==='__nova__'){
+    let nova=document.getElementById('novaPastaInput').value.trim();
+    if(!nova){ alert('Digite nome da nova pasta'); return null; }
+    if(!folders.includes(nova)){
+      folders.push(nova);
+      saveLocal();
+      renderFolders();
+    }
+    return nova;
+  }
+  return val;
+}
+
+document.getElementById('pastaSelect').addEventListener('change', function(){
+  let novaInput=document.getElementById('novaPastaInput');
+  novaInput.style.display=this.value==='__nova__'?'block':'none';
+  if(novaInput.style.display==='block') novaInput.focus();
+});
+
+function openImportModal(){ 
+  document.getElementById('importTitle').value='';
+  document.getElementById('urlInput').value='';
+  document.getElementById('manual').value='';
+  document.getElementById('status').style.display='none';
+  renderFolders();
+  document.getElementById('importModal').classList.add('show'); 
+}
+function closeImportModal(){ document.getElementById('importModal').classList.remove('show'); }
+function filterFolder(f){ currentFolder=f; renderFolders(); renderList(); }
+
+function renderList(){
+  let q=(document.getElementById('search').value||'').toLowerCase();
+  let filtered=songs.filter(s=>{
+    let mf=currentFolder==='Todas'||s.folder===currentFolder;
+    let ms=!q||s.title.toLowerCase().includes(q)||(s.artist||'').toLowerCase().includes(q);
+    return mf&&ms;
+  });
+  let list=document.getElementById('list');
+  list.innerHTML='';
+  if(filtered.length===0){
+    list.innerHTML='<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px">Nenhuma música nesta pasta<br><small>Clique em 📥 Importar ou + Nova música</small></div>';
+    return;
+  }
+  filtered.forEach(s=>{
+    let div=document.createElement('div');
+    div.className='card';
+    div.innerHTML=`<div><b>${s.title}</b><br><small>${s.artist||s.folder} • ${s.folder}</small></div><div style="display:flex;gap:6px"><button class="btn btn-white" style="padding:6px 10px;font-size:10px" onclick="event.stopPropagation(); editSong(${s.id})">✏️</button><div>›</div></div>`;
+    div.onclick=()=>openSongFirebase(s, null);
+    list.appendChild(div);
+  });
+}
+
+function openSongFirebase(s, bandData){
+  currentSong=songs.find(x=>x.id===s.id) || s;
+  if(!currentSong) return;
+  if(bandData){
+    currentTomSteps=bandData.trans||0;
+    currentCapo=bandData.capo||0;
+    speed=bandData.vel||5;
+  }else{
+    if(isLeader && bandRoomRef){
+      bandRoomRef.update({currentSongId:currentSong.id,title:currentSong.title,fullText:currentSong.cifra,vel:speed,trans:currentTomSteps,capo:currentCapo,scroll:0}).catch(()=>{});
+    }
+  }
+  document.getElementById('songTitle').textContent=currentSong.title;
+  document.getElementById('songArtist').textContent=`${currentSong.artist||currentSong.folder} • ${currentSong.folder} • Tom: ${NOTAS[(0+currentTomSteps+120)%12]} | Capo: ${currentCapo}`;
+  document.getElementById('tomDisplay').textContent=NOTAS[(0+currentTomSteps+120)%12];
+  document.getElementById('velDisplay').textContent=speed;
+  document.getElementById('bandaBar').style.display=isLeader||isFollowing?'flex':'none';
+  document.getElementById('bandaBarText').textContent=isLeader?`LÍDER - Sala ${roomCode}`:`MÚSICO - Sala ${roomCode}`;
+  isBandaMode=isLeader||isFollowing;
+  renderCapo(); renderSongFirebase();
+  document.getElementById('screenList').classList.remove('active');
+  document.getElementById('screenSong').classList.add('active');
+  document.getElementById('songContent').scrollTop=0;
+}
+
+function backFromSong(){
+  document.getElementById('screenSong').classList.remove('active');
+  document.getElementById('screenList').classList.add('active');
+  renderList();
+  if(isPlaying && isLeader){ clearInterval(playInterval); isPlaying=false; document.getElementById('playBtn').textContent='▶ Play'; if(bandRoomRef) bandRoomRef.update({play:false}).catch(()=>{}); }
+}
+
+function renderCapo(){
+  let h=''; for(let i=0;i<=7;i++) h+=`<button class="capo-btn ${i===currentCapo?'active':''}" onclick="setCapo(${i})">${i}</button>`;
+  document.getElementById('capoBtns').innerHTML=h;
+}
+
+function getTransposed(){
+  if(!currentSong) return '';
+  let steps=currentTomSteps - currentCapo;
+  return currentSong.cifra.split('\n').map(line=>{
+    if(line.trim().startsWith('[')) return line;
+    let chordCount=(line.match(/\b[A-G][#b]?/g)||[]).length;
+    let isLyric=/[a-z]{4,}/.test(line) && line.length>25;
+    if(chordCount>=1 && (!isLyric || chordCount>=2 || line.trim().length<30)){
+      return line.replace(/([A-G][#b]?m?7?M?\/?[A-G]?[#b]?m?\d*)/g, m=>{
+        if(m.length>7) return m;
+        if(m==='A'||m==='E') return m;
+        return transposeChord(m, steps);
+      });
+    }
+    return line;
+  }).join('\n');
+}
+
+function renderSongFirebase(){
+  let cifra=getTransposed();
+  let html='';
+  for(let line of cifra.split('\n')){
+    if(!line.trim()){ html+='<div style="height:10px"></div>'; continue; }
+    if(line.trim().startsWith('[')){ html+=`<div class="bar">${line.replace(/\[|\]/g,'')}</div>`; }
+    else if(/^[A-G\s\/#b0-9mM7]+$/.test(line.trim()) && line.trim().length<50){
+      let chords=line.replace(/([A-G][#b]?[^\s]*)/g,'<span class="chord">$1</span>');
+      html+=`<div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:12px;font-weight:800;font-family:monospace;font-size:${fontSize+1}px">${chords}</div>`;
+    }else{ html+=`<div style="font-size:${fontSize}px;line-height:1.6;margin-bottom:10px">${line}</div>`; }
+  }
+  document.getElementById('songContent').innerHTML=html;
+}
+
+function changeTom(dir){
+  if(isFollowing){ showToast('Apenas líder muda tom'); return; }
+  currentTomSteps+=dir;
+  let tom=NOTAS[(0+currentTomSteps+120)%12];
+  document.getElementById('tomDisplay').textContent=tom;
+  document.getElementById('songArtist').textContent=`${currentSong.artist||currentSong.folder} • ${currentSong.folder} • Tom: ${tom} | Capo: ${currentCapo}`;
+  renderSongFirebase();
+  if(isLeader && bandRoomRef) bandRoomRef.update({trans:currentTomSteps}).catch(()=>{});
+}
+
+function setCapo(n){
+  if(isFollowing){ showToast('Apenas líder muda capo'); return; }
+  currentCapo=n; renderCapo();
+  document.getElementById('songArtist').textContent=`${currentSong.artist||currentSong.folder} • ${currentSong.folder} • Tom: ${document.getElementById('tomDisplay').textContent} | Capo: ${n}`;
+  renderSongFirebase();
+  if(isLeader && bandRoomRef) bandRoomRef.update({capo:n}).catch(()=>{});
+}
+
+function setSpeed(dir){
+  if(isFollowing){ showToast('Apenas líder muda velocidade'); return; }
+  speed=Math.max(1, Math.min(30, speed+dir));
+  document.getElementById('velDisplay').textContent=speed;
+  if(isLeader && bandRoomRef) bandRoomRef.update({vel:speed}).catch(()=>{});
+  showToast('⚡ Velocidade: '+speed+' (quanto maior, mais rápido)');
+}
+
+function changeFontSize(dir){
+  fontSize=Math.max(10,Math.min(28,fontSize+dir));
+  document.getElementById('fontDisplay').textContent=fontSize+'px';
+  renderSongFirebase();
+}
+
+function setPlayFirebase(v){
+  isPlaying=v;
+  document.getElementById('playBtn').textContent=v?'⏸ Pausar':'▶ Play';
+  if(v){
+    playInterval=setInterval(()=>{
+      let sc=document.getElementById('songContent');
+      sc.scrollTop+=1;
+      if(isLeader && bandRoomRef){
+        let now=Date.now();
+        if(now-lastBandScroll>300){
+          lastBandScroll=now;
+          bandRoomRef.update({scroll:sc.scrollTop}).catch(()=>{});
+        }
+      }
+      if(sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 5){
+        setPlayFirebase(false);
+        if(isLeader && bandRoomRef) bandRoomRef.update({play:false}).catch(()=>{});
+      }
+    }, 120 - speed*2);
+  }else{
+    clearInterval(playInterval);
+  }
+}
+
+function togglePlay(){
+  let newPlay=!isPlaying;
+  if(isFollowing){ showToast('Apenas líder controla Play'); return; }
+  setPlayFirebase(newPlay);
+  if(isLeader && bandRoomRef) bandRoomRef.update({play:newPlay,scroll:document.getElementById('songContent').scrollTop}).catch(()=>{});
+}
+
+document.getElementById('songContent').addEventListener('scroll', ()=>{
+  if(!isLeader||!bandRoomRef||ignoreBandScroll) return;
+  let now=Date.now();
+  if(now-lastBandScroll<300) return;
+  lastBandScroll=now;
+  bandRoomRef.update({scroll:document.getElementById('songContent').scrollTop}).catch(()=>{});
+});
+
+function doImportLink(){
+  let folder=getSelectedFolder();
+  if(!folder) return;
+  let title=document.getElementById('importTitle').value.trim();
+  let url=document.getElementById('urlInput').value.trim();
+  let st=document.getElementById('status');
+  if(!url){ showToast('Cole link do cifra'); return; }
+  if(!title){ title='Música importada'; }
+  st.style.display='block'; st.style.background='#fef3c7'; st.textContent='Baixando "'+title+'" em "'+folder+'"...';
+  let proxies=['https://api.allorigins.win/raw?url=','https://corsproxy.io/?'];
+  let tryProxy=(i)=>{
+    if(i>=proxies.length){ st.style.background='#fee2e2'; st.textContent='Bloqueado, use copiar e colar'; return; }
+    fetch(proxies[i]+encodeURIComponent(url)).then(r=>r.text()).then(html=>{
+      let doc=new DOMParser().parseFromString(html,'text/html');
+      let pre=doc.querySelector('pre');
+      let cifra=pre?pre.innerText:'';
+      let h1Title=doc.querySelector('h1')?doc.querySelector('h1').innerText:'';
+      if(h1Title && !document.getElementById('importTitle').value.trim()){
+        // se não digitou nome, usa do site
+        title=h1Title.substring(0,60);
+      }
+      if(!cifra||cifra.length<20){ tryProxy(i+1); return; }
+      let ns={id:Date.now(),title:title,artist:folder,folder:folder,cifra:cifra.substring(0,15000)};
+      songs.unshift(ns); saveLocal(); st.style.background='#dcfce7'; st.textContent='✅ "'+title+'" salvo em "'+folder+'" e salvo mesmo saindo do app!';
+      setTimeout(()=>{ closeImportModal(); openSongFirebase(ns, null); st.style.display='none'; filterFolder(folder); },800);
+    }).catch(()=>tryProxy(i+1));
+  };
+  tryProxy(0);
+}
+
+function importManual(){
+  let folder=getSelectedFolder();
+  if(!folder) return;
+  let title=document.getElementById('importTitle').value.trim();
+  let txt=document.getElementById('manual').value.trim();
+  if(!title){ alert('Digite o nome da música no campo "Nome da música"'); document.getElementById('importTitle').focus(); return; }
+  if(txt.length<10){ alert('Cole a cifra'); return; }
+  let ns={id:Date.now(),title:title,artist:folder,folder:folder,cifra:txt};
+  songs.unshift(ns); saveLocal(); closeImportModal(); renderList(); openSongFirebase(ns, null); filterFolder(folder); showToast('✅ "'+title+'" salvo em "'+folder+'" - fica salvo mesmo saindo!');
+}
+
+function editSong(id){
+  let s=songs.find(x=>x.id===id);
+  if(!s) return;
+  currentSong=s;
+  document.getElementById('editTitle').value=s.title;
+  updateFolderSelects();
+  document.getElementById('editFolderSelect').value=s.folder;
+  document.getElementById('editCifra').value=s.cifra;
+  document.getElementById('editModal').classList.add('show');
+}
+
+function openNew(){ 
+  currentSong=null;
+  document.getElementById('editTitle').value=''; 
+  updateFolderSelects();
+  document.getElementById('editFolderSelect').value=currentFolder!=='Todas'?currentFolder:'Gospel'; 
+  document.getElementById('editCifra').value='[INTRO]\nC  Am\n\n[VERSO]\nC\nMinha música'; 
+  document.getElementById('editModal').classList.add('show'); 
+}
+function closeEdit(){ document.getElementById('editModal').classList.remove('show'); }
+function saveEdit(){
+  let t=document.getElementById('editTitle').value.trim()||'Sem título';
+  let selFolder=document.getElementById('editFolderSelect').value;
+  let c=document.getElementById('editCifra').value.trim();
+  if(!c){ alert('Digite cifra'); return; }
+  if(currentSong && currentSong.id){
+    let s=songs.find(x=>x.id===currentSong.id);
+    if(s){ s.title=t; s.artist=selFolder; s.folder=selFolder; s.cifra=c; }
+  }else{
+    songs.unshift({id:Date.now(),title:t,artist:selFolder,folder:selFolder,cifra:c});
+  }
+  saveLocal(); closeEdit(); renderFolders(); renderList(); filterFolder(selFolder);
+  showToast('✅ "'+t+'" salvo em "'+selFolder+'" - fica salvo mesmo saindo!');
+  if(currentSong) openSongFirebase(songs.find(x=>x.title===t) || currentSong, null);
+}
+
+(function(){
+  let params=new URLSearchParams(location.search);
+  let code=params.get('banda');
+  if(code){
+    setTimeout(()=>{
+      document.getElementById('joinCode').value=code;
+      openBandModal();
+      showToast('Código da banda detectado: '+code);
+    },1000);
+  }
+})();
+
+renderFolders();
+renderList();
+updateFolderSelects();
+</script>
+</body>
+</html>
