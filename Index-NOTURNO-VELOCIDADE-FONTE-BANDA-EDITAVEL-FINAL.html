@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meu Repertório - Modo Noturno + Banda Editável</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f6f7fb;--card:#fff;--text:#111;--border:#e5e7eb;--primary:#2f5bff}
+body.dark{--bg:#0f0f14;--card:#1a1a24;--text:#e5e7eb;--border:#2a2a3a;--primary:#5b7bff;background:#0f0f14;color:#e5e7eb}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);transition:.3s}
+.screen{display:none;min-height:100vh;background:var(--bg)}
+.screen.active{display:block}
+.screen-song{background:var(--card);min-height:100vh}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:16px;position:sticky;top:0;z-index:20}
+.h1{font-size:18px;font-weight:900}
+.sub{font-size:11px;color:#6b7280}
+.btn{border:none;border-radius:100px;padding:11px 16px;font-weight:800;font-size:13px;cursor:pointer}
+.btn-blue{background:var(--primary);color:white}
+.btn-black{background:#111;color:white}
+body.dark .btn-black{background:#2a2a3a}
+.btn-white{background:var(--card);border:1px solid var(--border);color:var(--text)}
+.btn-banda{background:linear-gradient(135deg,#2f5bff,#7c3aed);color:white;padding:14px 18px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.folder{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:6px 12px;font-size:11px;font-weight:700;margin:3px;cursor:pointer;color:var(--text)}
+.folder.active{background:var(--primary);color:white;border-color:var(--primary)}
+.card{background:var(--card);border-radius:16px;padding:14px 16px;margin:8px 12px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer;color:var(--text)}
+.top{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:20}
+.back{width:36px;height:36px;background:#dbeafe;border-radius:100px;display:flex;align-items:center;justify-content:center;color:#2f5bff;font-weight:800;font-size:18px;border:none;cursor:pointer}
+body.dark .back{background:#2a2a3a}
+.controls-bar{background:var(--card);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;gap:12px;align-items:center;overflow-x:auto;position:sticky;top:52px;z-index:18;flex-wrap:wrap}
+.ctrl-group{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:100px;padding:4px 8px;flex-shrink:0}
+.ctrl-label{font-size:9px;font-weight:800;letter-spacing:.6px;color:#6b7280}
+.ctrl-btn{width:28px;height:28px;border-radius:100px;border:1px solid var(--border);background:var(--card);font-weight:800;font-size:12px;cursor:pointer;color:var(--text)}
+.ctrl-btn.active{background:var(--primary);color:white;border-color:var(--primary)}
+.transpose{padding:8px 10px;display:flex;gap:6px;align-items:center;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:92px;z-index:17}
+.t-btn{border:1px solid var(--border);background:var(--card);border-radius:100px;padding:5px 10px;font-weight:700;font-size:11px;min-width:32px;cursor:pointer;flex-shrink:0;color:var(--text)}
+.t-btn.active{background:var(--primary);color:white}
+.capo{padding:8px 10px;display:flex;gap:6px;align-items:center;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:128px;z-index:16}
+.capo-btn{width:28px;height:28px;border-radius:100px;border:1px solid var(--border);background:var(--card);font-weight:700;font-size:11px;flex-shrink:0;cursor:pointer;color:var(--text)}
+.capo-btn.active{background:var(--primary);color:white}
+.content{padding:16px 16px 100px;background:var(--card);min-height:60vh}
+.bar{background:var(--primary);color:white;font-weight:800;font-size:11px;padding:7px 12px;border-radius:7px;margin:16px 0 10px}
+.chord{font-weight:800;background:#eef2ff;color:#2f5bff;padding:2px 6px;border-radius:6px;font-family:monospace}
+body.dark .chord{background:#2a2a3a;color:#7b9bff}
+.lyric{line-height:1.6;margin-bottom:10px}
+.banda-banner{background:linear-gradient(135deg,#2f5bff,#7c3aed);color:white;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:25}
+.live-dot{width:10px;height:10px;background:#ef4444;border-radius:100px;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#111;color:white;padding:10px 18px;border-radius:100px;font-size:12px;font-weight:700;z-index:200;display:none;max-width:90%;text-align:center}
+.toast.show{display:block}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;padding:16px;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--card);border-radius:20px;padding:20px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;border:1px solid var(--border)}
+.input{width:100%;padding:12px;border-radius:100px;border:2px solid var(--border);font-size:13px;outline:none;margin-top:8px;background:var(--card);color:var(--text)}
+.select{width:100%;padding:12px;border-radius:100px;border:2px solid var(--primary);font-size:13px;outline:none;margin-top:8px;background:var(--card);font-weight:700;color:var(--text)}
+.textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);font-family:monospace;font-size:12px;outline:none;margin-top:8px;background:var(--card);color:var(--text)}
+.member-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;margin:6px 0}
+.member-info{display:flex;align-items:center;gap:8px}
+.member-avatar{width:32px;height:32px;background:var(--primary);color:white;border-radius:100px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
+</style>
+</head>
+<body>
+
+<div id="screenList" class="screen active">
+<div class="header">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div><div class="h1">Meu Repertório</div><div class="sub">Prompter Pro • igual ao vídeo original</div></div>
+<button class="btn btn-white" style="padding:8px 12px;font-size:11px" onclick="toggleDark()">🌙 Noite</button>
+</div>
+<div style="margin-top:14px">
+<button class="btn btn-banda" onclick="enterBandaMode()">👥 MODO BANDA - 7 integrantes</button>
+</div>
+<div style="display:flex;gap:8px;margin-top:12px">
+<button class="btn btn-white" style="flex:1" onclick="openImportModal()">📥 Importar do cifra</button>
+<button class="btn btn-black" onclick="openNew()">+ Nova</button>
+</div>
+<input id="search" placeholder="🔍 Buscar música..." style="width:100%;margin-top:12px;padding:11px 16px;border-radius:100px;border:1px solid var(--border);background:var(--bg);font-size:13px;outline:none;color:var(--text)" oninput="renderList()">
+</div>
+<div style="padding:10px 12px 4px 12px;display:flex;flex-wrap:wrap">
+<div class="folder active" data-f="Todas" onclick="filterFolder('Todas')">Todas</div>
+<div class="folder" data-f="Sertanejo" onclick="filterFolder('Sertanejo')">Sertanejo</div>
+<div class="folder" data-f="Gospel" onclick="filterFolder('Gospel')">Gospel</div>
+<div class="folder" data-f="Pop Rock" onclick="filterFolder('Pop Rock')">Pop Rock</div>
+<div class="folder" data-f="Axé" onclick="filterFolder('Axé')">Axé</div>
+<div class="folder" data-f="Importadas" onclick="filterFolder('Importadas')">📥 Importadas</div>
+</div>
+<div id="list"></div>
+</div>
+
+<div id="importModal" class="modal-bg" onclick="if(event.target.id==='importModal') closeImportModal()">
+<div class="modal">
+<h2 style="font-size:18px;font-weight:900">📥 Importar do cifra</h2>
+<div style="background:#fffbeb;border:2px solid #f59e0b;border-radius:12px;padding:12px;margin:10px 0">
+<b style="font-size:13px">📁 Em qual pasta salvar?</b>
+<select id="pastaSelect" class="select" style="border-color:#f59e0b">
+<option value="Importadas">📥 Importadas</option><option value="Sertanejo">Sertanejo</option><option value="Gospel">Gospel</option><option value="Pop Rock">Pop Rock</option><option value="Axé">Axé</option><option value="Outros">Outros</option><option value="__nova__">+ Criar nova pasta...</option>
+</select>
+<input id="novaPastaInput" class="input" style="display:none" placeholder="Nome da nova pasta">
+</div>
+<div style="background:var(--bg);border-radius:14px;padding:14px;margin:10px 0;border-left:4px solid var(--primary)">
+<b style="font-size:13px">🔗 Link direto</b>
+<div style="display:flex;gap:6px;margin-top:10px">
+<input id="urlInput" class="input" style="flex:1;margin:0;font-size:12px" placeholder="https://www.cifraclub.com/...">
+<button class="btn btn-blue" style="width:auto;padding:10px 14px" onclick="doImportLink()">Baixar</button>
+</div>
+<div id="status" style="margin-top:8px;padding:8px;border-radius:8px;font-size:11px;display:none"></div>
+</div>
+<div style="background:var(--bg);border-radius:14px;padding:14px;margin:10px 0;border-left:4px solid #10b981">
+<b style="font-size:13px">📋 Copiar e colar</b>
+<textarea id="manual" class="textarea" rows="4" placeholder="Cole a cifra aqui..."></textarea>
+<button class="btn btn-black" style="width:100%;margin-top:8px" onclick="importManual()">📋 Importar</button>
+</div>
+<button class="btn btn-white" style="width:100%;margin-top:12px" onclick="closeImportModal()">Fechar</button>
+</div>
+</div>
+
+<!-- MODO BANDA COM NOMES E INSTRUMENTOS EDITÁVEIS -->
+<div id="screenBanda" class="screen">
+<div class="banda-banner">
+<div style="display:flex;align-items:center;gap:8px"><div class="live-dot"></div><div><b style="font-size:13px">MODO BANDA - ATÉ 7</b><br><small style="font-size:10px" id="bandaStatus">Conectando...</small></div></div>
+<div style="display:flex;gap:6px">
+<button class="btn btn-white" style="padding:6px 10px;font-size:10px;background:rgba(255,255,255,.2);border:none;color:white" onclick="toggleDark()">🌙</button>
+<button class="btn btn-white" style="padding:6px 12px;font-size:11px" onclick="exitBandaMode()">✕ Sair</button>
+</div>
+</div>
+
+<div style="padding:16px">
+<div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border)">
+
+<h2 style="font-size:14px;font-weight:900">👥 Editar integrantes da banda (7 vagas):</h2>
+<small style="font-size:11px;color:#6b7280">Toque no integrante para editar nome e instrumento</small>
+
+<div id="membersEdit" style="margin-top:12px">
+<!-- membros editáveis aqui -->
+</div>
+
+<button class="btn btn-white" style="width:100%;margin-top:12px;font-size:12px" onclick="addMember()">+ Adicionar integrante (até 7)</button>
+
+<div style="margin-top:16px;padding:12px;background:var(--bg);border-radius:12px;border:1px dashed var(--primary)">
+<b style="font-size:12px">🔗 Link para a banda entrar (onde colar):</b><br>
+<small style="font-size:10px;color:#6b7280">Cole no WhatsApp, barra de pesquisa, etc</small>
+<div style="display:flex;gap:6px;margin-top:8px">
+<input id="bandaLink" class="input" style="margin:0;font-size:11px;background:var(--bg)" readonly>
+<button class="btn btn-blue" style="width:auto;padding:8px 12px;font-size:11px" onclick="copyBandaLink()">Copiar</button>
+</div>
+<div style="display:flex;gap:6px;margin-top:8px">
+<button class="btn btn-black" style="flex:1;padding:8px;font-size:11px" onclick="shareWhatsApp()">📱 WhatsApp</button>
+<button class="btn btn-white" style="flex:1;padding:8px;font-size:11px" onclick="generateQR()">📷 QR Code</button>
+</div>
+<div id="qrArea" style="display:none;text-align:center;margin-top:12px;padding:12px;background:white;border-radius:12px">
+<canvas id="qrCanvas" style="width:200px;height:200px"></canvas>
+</div>
+</div>
+
+<b style="font-size:13px;margin-top:16px;display:block">📁 Escolha a pasta para tocar:</b>
+<div style="display:flex;flex-wrap:wrap;margin-top:8px">
+<div class="folder active" data-banda="Todas" onclick="filterBandaFolder('Todas')">Todas</div>
+<div class="folder" data-banda="Gospel" onclick="filterBandaFolder('Gospel')">Gospel</div>
+<div class="folder" data-banda="Importadas" onclick="filterBandaFolder('Importadas')">📥 Importadas</div>
+</div>
+</div>
+<div id="bandaList" style="margin-top:12px"></div>
+</div>
+</div>
+
+<div id="screenSong" class="screen screen-song">
+<div id="bandaBar" style="display:none;background:linear-gradient(135deg,#2f5bff,#7c3aed);color:white;padding:8px 16px;display:flex;justify-content:space-between;align-items:center">
+<div style="display:flex;align-items:center;gap:6px"><div class="live-dot"></div><small style="font-weight:800;font-size:11px" id="bandaBarText">MODO BANDA - 1/7</small></div>
+<div style="display:flex;gap:6px">
+<button class="btn btn-white" style="padding:4px 8px;font-size:10px;background:rgba(255,255,255,.2);border:none;color:white" onclick="toggleDark()">🌙</button>
+<button class="btn btn-white" style="padding:4px 10px;font-size:10px" onclick="backFromSong()">Voltar</button>
+</div>
+</div>
+<div class="top">
+<div style="display:flex;align-items:center;gap:10px">
+<button class="back" onclick="backFromSong()">←</button>
+<div><b id="songTitle" style="font-size:14px">Tudo É Perda</b><br><small id="songArtist" style="color:#6b7280;font-size:11px">Tom: C | Capo: 0</small></div>
+</div>
+<div style="display:flex;gap:6px">
+<button class="btn btn-blue" id="playBtn" style="padding:8px 14px;font-size:12px" onclick="togglePlay()">▶ Play</button>
+</div>
+</div>
+
+<!-- CONTROLES NOVOS: VELOCIDADE + FONTE + NOTURNO -->
+<div class="controls-bar">
+<div class="ctrl-group">
+<span class="ctrl-label">⚡ VELOC</span>
+<button class="ctrl-btn" onclick="setSpeed(0.5)">0.5x</button>
+<button class="ctrl-btn active" id="speed1x" onclick="setSpeed(1)">1x</button>
+<button class="ctrl-btn" onclick="setSpeed(1.5)">1.5x</button>
+<button class="ctrl-btn" onclick="setSpeed(2)">2x</button>
+</div>
+<div class="ctrl-group">
+<span class="ctrl-label">🔤 FONTE</span>
+<button class="ctrl-btn" onclick="changeFontSize(-1)">A-</button>
+<span id="fontDisplay" style="font-size:11px;font-weight:800;min-width:30px;text-align:center">14px</span>
+<button class="ctrl-btn" onclick="changeFontSize(1)">A+</button>
+</div>
+<div class="ctrl-group">
+<span class="ctrl-label">🌙 TELA</span>
+<button class="ctrl-btn" id="nightBtn" onclick="toggleDark()">🌙 Noite</button>
+<button class="ctrl-btn" onclick="toggleFullscreen()">⛶ Tela cheia</button>
+</div>
+</div>
+
+<div class="transpose">
+<button class="t-btn" onclick="changeTom(-1)">−</button>
+<button class="t-btn active" id="tomDisplay">C</button>
+<button class="t-btn" onclick="changeTom(1)">+</button>
+<span style="font-size:10px;color:#6b7280;margin-left:6px">TOM auto p/ banda</span>
+</div>
+<div class="capo">
+<span style="font-size:10px;font-weight:800;color:#6b7280">CAPOTRASTE</span>
+<div id="capoBtns" style="display:flex;gap:4px;margin-left:6px"></div>
+</div>
+<div class="content" id="songContent"></div>
+</div>
+
+<div id="memberModal" class="modal-bg" onclick="if(event.target.id==='memberModal') closeMemberModal()">
+<div class="modal">
+<h2 style="font-size:16px;font-weight:900">👥 Editar integrante</h2>
+<input id="memberName" class="input" placeholder="Nome (ex: João, Maria, Carlos)">
+<select id="memberInstrument" class="select">
+<option value="🎸 Violão">🎸 Violão</option>
+<option value="🎸 Guitarra">🎸 Guitarra</option>
+<option value="🎸 Baixo">🎸 Baixo</option>
+<option value="🥁 Bateria">🥁 Bateria</option>
+<option value="🎹 Teclado">🎹 Teclado</option>
+<option value="🎤 Voz">🎤 Voz</option>
+<option value="🎻 Violino">🎻 Violino</option>
+<option value="🎺 Trompete">🎺 Trompete</option>
+<option value="🎷 Sax">🎷 Sax</option>
+<option value="🪘 Percussão">🪘 Percussão</option>
+<option value="🎧 Técnico">🎧 Técnico</option>
+<option value="📱 Outro">📱 Outro</option>
+</select>
+<input id="memberColor" type="color" style="width:100%;height:40px;border-radius:100px;border:none;margin-top:8px" value="#2f5bff">
+<div style="display:flex;gap:8px;margin-top:12px">
+<button class="btn btn-blue" style="flex:1" onclick="saveMember()">💾 Salvar</button>
+<button class="btn btn-white" style="flex:1" onclick="deleteMember()">🗑 Excluir</button>
+</div>
+<button class="btn btn-white" style="width:100%;margin-top:8px" onclick="closeMemberModal()">Cancelar</button>
+</div>
+</div>
+
+<div id="editModal" class="modal-bg" onclick="if(event.target.id==='editModal') closeEdit()">
+<div class="modal">
+<h2>✏️ Editar música</h2>
+<input id="editTitle" class="input" placeholder="Título">
+<select id="editFolderSelect" class="select" style="border-color:var(--border)">
+<option value="Gospel">Gospel</option><option value="Sertanejo">Sertanejo</option><option value="Pop Rock">Pop Rock</option><option value="Axé">Axé</option><option value="Importadas">📥 Importadas</option><option value="Outros">Outros</option>
+</select>
+<textarea id="editCifra" class="textarea" rows="10"></textarea>
+<button class="btn btn-blue" onclick="saveEdit()">💾 Salvar</button>
+<button class="btn btn-white" onclick="closeEdit()">Cancelar</button>
+</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const NOTAS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const MAP_B={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+function transposeChord(chord, steps){
+  let m=chord.match(/^([A-G][#b]?)(.*)$/);
+  if(!m) return chord;
+  let base=m[1];
+  if(MAP_B[base]) base=MAP_B[base];
+  let idx=NOTAS.indexOf(base);
+  if(idx===-1) return chord;
+  return NOTAS[(idx+steps+120)%12]+m[2];
+}
+
+let peer=null, connections={}, roomCode=null, isLeader=false;
+let bandMembers=[
+  {id:0,name:'Você',instrument:'🎸 Violão (líder)',color:'#2f5bff',isLeader:true},
+  {id:1,name:'Marcos',instrument:'🎸 Baixo',color:'#10b981'},
+  {id:2,name:'Ana',instrument:'🥁 Bateria',color:'#ef4444'},
+];
+let editingMemberId=null;
+let currentSong=null, currentTomSteps=0, currentCapo=0, currentFolder='Todas', bandaFolder='Todas', isBandaMode=false, isPlaying=false, playInterval=null, fontSize=14, speed=1, isDark=false;
+
+function save(){
+  localStorage.setItem('prompter_final_noturno', JSON.stringify(songs));
+  localStorage.setItem('prompter_band_members', JSON.stringify(bandMembers));
+}
+function showToast(m){ let t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+
+function toggleDark(){
+  isDark=!isDark;
+  document.body.classList.toggle('dark', isDark);
+  document.getElementById('nightBtn').textContent=isDark?'☀️ Dia':'🌙 Noite';
+  let btns=document.querySelectorAll('[onclick="toggleDark()"]');
+  btns.forEach(b=>{ if(b.id!=='nightBtn') b.textContent=isDark?'☀️':'🌙'; });
+  showToast(isDark?'🌙 Modo noturno ativado - ideal para shows à noite!':'☀️ Modo claro');
+  localStorage.setItem('darkMode', isDark?'1':'0');
+}
+
+function setSpeed(s){
+  speed=s;
+  document.querySelectorAll('.controls-bar .ctrl-group:first-child .ctrl-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('speed1x').parentElement.querySelectorAll('.ctrl-btn').forEach(b=>{
+    if(b.textContent===s+'x' || (s===1 && b.textContent==='1x')) b.classList.add('active');
+  });
+  // atualiza velocidade do play se estiver tocando
+  if(isPlaying){
+    clearInterval(playInterval);
+    playInterval=setInterval(()=>window.scrollBy(0,1), 100/speed);
+  }
+  showToast('⚡ Velocidade: '+s+'x');
+}
+
+function changeFontSize(dir){
+  fontSize=Math.max(10, Math.min(30, fontSize+dir));
+  document.getElementById('fontDisplay').textContent=fontSize+'px';
+  renderSong();
+  showToast('🔤 Fonte: '+fontSize+'px');
+}
+
+function toggleFullscreen(){
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+}
+
+function getSelectedFolder(){
+  let sel=document.getElementById('pastaSelect');
+  let val=sel.value;
+  if(val==='__nova__'){
+    let nova=document.getElementById('novaPastaInput').value.trim();
+    if(!nova){ alert('Digite o nome da nova pasta'); return null; }
+    return nova;
+  }
+  return val;
+}
+document.getElementById('pastaSelect').addEventListener('change', function(){
+  let novaInput=document.getElementById('novaPastaInput');
+  novaInput.style.display=this.value==='__nova__'?'block':'none';
+});
+
+var songs=[];
+try{ songs=JSON.parse(localStorage.getItem('prompter_final_noturno')||'[]'); }catch(e){}
+try{ let bm=JSON.parse(localStorage.getItem('prompter_band_members')||'[]'); if(bm.length) bandMembers=bm; }catch(e){}
+if(songs.length===0){
+  songs=[
+    {id:1,title:'Até Você Voltar',artist:'Sertanejo',folder:'Sertanejo',cifra:'[INTRO]\nC  G  Am  F\n\n[VERSO 1]\nC\nAté você voltar'},
+    {id:2,title:'Tudo É Perda',artist:'Felipe Rodrigues',folder:'Gospel',cifra:'C  Am  C/G  F7M\n\n[INTRO]\nC  Am  C/G  F7M\n\n[VERSO 1]\nC                Am7\nTudo é perda se não tenho a Ti\nG                  F\nA Tua graça é o que me basta'},
+  ];
+  localStorage.setItem('prompter_final_noturno', JSON.stringify(songs));
+}
+if(localStorage.getItem('darkMode')==='1'){ isDark=true; document.body.classList.add('dark'); }
+
+function renderBandMembers(){
+  let html='';
+  for(let m of bandMembers){
+    html+=`
+    <div class="member-card" onclick="editMember(${m.id})">
+      <div class="member-info">
+        <div class="member-avatar" style="background:${m.color}">${m.name.charAt(0).toUpperCase()}</div>
+        <div>
+          <b style="font-size:13px">${m.name} ${m.isLeader?'(líder)':''}</b><br>
+          <small style="color:#6b7280;font-size:11px">${m.instrument}</small>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <span style="font-size:10px;background:var(--bg);border:1px solid var(--border);padding:4px 8px;border-radius:100px">✏️ Editar</span>
+      </div>
+    </div>`;
+  }
+  document.getElementById('membersEdit').innerHTML=html;
+  // também atualiza contador
+  document.getElementById('memberCount') && (document.getElementById('memberCount').textContent=bandMembers.length);
+  let bandaBarText=document.getElementById('bandaBarText');
+  if(bandaBarText) bandaBarText.textContent=`MODO BANDA - ${bandMembers.length}/7 - ${bandMembers.map(m=>m.name).join(', ')}`;
+}
+
+function editMember(id){
+  editingMemberId=id;
+  let m=bandMembers.find(x=>x.id===id);
+  if(!m) return;
+  document.getElementById('memberName').value=m.name;
+  document.getElementById('memberInstrument').value=m.instrument;
+  document.getElementById('memberColor').value=m.color;
+  document.getElementById('memberModal').classList.add('show');
+}
+function closeMemberModal(){ document.getElementById('memberModal').classList.remove('show'); editingMemberId=null; }
+function saveMember(){
+  let name=document.getElementById('memberName').value.trim();
+  let inst=document.getElementById('memberInstrument').value;
+  let color=document.getElementById('memberColor').value;
+  if(!name){ alert('Digite o nome'); return; }
+  let m=bandMembers.find(x=>x.id===editingMemberId);
+  if(m){ m.name=name; m.instrument=inst; m.color=color; }
+  save(); renderBandMembers(); closeMemberModal(); showToast('✅ '+name+' - '+inst+' salvo!');
+  broadcast({type:'membersUpdate', members:bandMembers});
+}
+function deleteMember(){
+  if(bandMembers.length<=1){ alert('Precisa ter ao menos 1 integrante'); return; }
+  if(editingMemberId===0 && bandMembers.find(x=>x.id===0)?.isLeader){
+    alert('Não pode excluir o líder');
+    return;
+  }
+  if(confirm('Excluir este integrante?')){
+    bandMembers=bandMembers.filter(x=>x.id!==editingMemberId);
+    save(); renderBandMembers(); closeMemberModal(); showToast('Integrante excluído');
+  }
+}
+function addMember(){
+  if(bandMembers.length>=7){ alert('Máximo 7 integrantes!'); return; }
+  let newId=Date.now();
+  bandMembers.push({id:newId,name:'Novo '+ (bandMembers.length+1),instrument:'🎸 Violão',color:'#'+Math.floor(Math.random()*16777215).toString(16)});
+  save(); renderBandMembers();
+  editMember(newId);
+}
+
+// Banda PeerJS
+function initPeerAsLeader(code){
+  roomCode=code; isLeader=true;
+  try{
+    peer=new Peer('prompter-banda-'+code);
+    peer.on('open', id=>{
+      document.getElementById('bandaStatus').textContent='Sala '+code+' criada - '+Object.keys(connections).length+'/7';
+      document.getElementById('bandaLink').value=location.origin+location.pathname+'?banda='+code;
+    });
+    peer.on('connection', conn=>{
+      if(Object.keys(connections).length>=6){
+        conn.on('open', ()=>{ conn.send({type:'full'}); conn.close(); });
+        return;
+      }
+      connections[conn.peer]=conn;
+      setupConn(conn);
+    });
+  }catch(e){}
+}
+
+function setupConn(conn){
+  conn.on('data', data=>{
+    if(data.type==='song'){
+      currentSong=songs.find(s=>s.id===data.songId);
+      if(currentSong){
+        currentTomSteps=data.tomSteps||0; currentCapo=data.capo||0;
+        document.getElementById('songTitle').textContent=currentSong.title;
+        document.getElementById('songArtist').textContent=`${currentSong.artist} • Pasta: ${currentSong.folder} • Tom: ${NOTAS[(0+currentTomSteps+120)%12]} | Capo: ${currentCapo}`;
+        document.getElementById('tomDisplay').textContent=NOTAS[(0+currentTomSteps+120)%12];
+        renderCapo(); renderSong();
+        document.getElementById('screenList').classList.remove('active');
+        document.getElementById('screenBanda').classList.remove('active');
+        document.getElementById('screenSong').classList.add('active');
+        document.getElementById('bandaBar').style.display='flex';
+      }
+    }else if(data.type==='tom'){ currentTomSteps=data.steps; document.getElementById('tomDisplay').textContent=NOTAS[(0+currentTomSteps+120)%12]; renderSong(); }
+    else if(data.type==='capo'){ currentCapo=data.capo; renderCapo(); renderSong(); }
+    else if(data.type==='membersUpdate'){ bandMembers=data.members; save(); renderBandMembers(); }
+    else if(data.type==='play'){
+      if(data.playing){ isPlaying=true; document.getElementById('playBtn').textContent='⏸ Pausar'; }
+      else{ isPlaying=false; document.getElementById('playBtn').textContent='▶ Play'; clearInterval(playInterval); }
+    }
+  });
+}
+
+function broadcast(msg){
+  for(let id in connections){ try{ connections[id].send(msg); }catch(e){} }
+}
+
+function openImportModal(){ document.getElementById('importModal').classList.add('show'); }
+function closeImportModal(){ document.getElementById('importModal').classList.remove('show'); }
+function enterBandaMode(){
+  let code=Math.random().toString(36).substring(2,6).toUpperCase();
+  isBandaMode=true;
+  document.getElementById('screenList').classList.remove('active');
+  document.getElementById('screenBanda').classList.add('active');
+  document.getElementById('bandaLink').value=location.origin+location.pathname+'?banda='+code;
+  initPeerAsLeader(code);
+  renderBandMembers();
+  renderBandaList();
+  showToast('👥 Sala '+code+' criada! Edite nomes e instrumentos');
+}
+function exitBandaMode(){
+  if(peer){ peer.destroy(); }
+  peer=null; connections={}; roomCode=null; isLeader=false; isBandaMode=false;
+  document.getElementById('screenBanda').classList.remove('active');
+  document.getElementById('screenList').classList.add('active');
+  renderList();
+}
+function filterFolder(f){ currentFolder=f; document.querySelectorAll('#screenList .folder').forEach(el=>el.classList.toggle('active', el.dataset.f===f)); renderList(); }
+function filterBandaFolder(f){ bandaFolder=f; document.querySelectorAll('#screenBanda .folder').forEach(el=>el.classList.toggle('active', el.dataset.banda===f)); renderBandaList(); }
+function renderList(){
+  let q=(document.getElementById('search').value||'').toLowerCase();
+  let filtered=songs.filter(s=>{
+    let mf=currentFolder==='Todas'||s.folder===currentFolder;
+    let ms=!q||s.title.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q);
+    return mf&&ms;
+  });
+  let html='';
+  for(let s of filtered) html+=`<div class="card" onclick="openSong(${s.id}, false)"><div><b>${s.title}</b><br><small>${s.artist} • ${s.folder}</small></div><div>›</div></div>`;
+  document.getElementById('list').innerHTML=html||'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px">Nenhuma música</div>';
+}
+function renderBandaList(){
+  let filtered=songs.filter(s=>bandaFolder==='Todas'||s.folder===bandaFolder);
+  let html='';
+  for(let s of filtered) html+=`<div class="card" onclick="openSong(${s.id}, true)"><div><b>▶ ${s.title}</b><br><small>${s.artist} • Ao vivo p/ ${bandMembers.length} músicos</small></div><div style="background:#2f5bff;color:white;padding:4px 8px;border-radius:100px;font-size:10px">BANDA</div></div>`;
+  document.getElementById('bandaList').innerHTML=html;
+}
+function openSong(id, fromBanda){
+  currentSong=songs.find(s=>s.id===id);
+  if(!currentSong) return;
+  if(!fromBanda && !isBandaMode){ currentTomSteps=0; currentCapo=0; }
+  document.getElementById('songTitle').textContent=currentSong.title;
+  document.getElementById('songArtist').textContent=`${currentSong.artist} • Pasta: ${currentSong.folder} • Tom: ${NOTAS[(0+currentTomSteps+120)%12]} | Capo: ${currentCapo}`;
+  document.getElementById('tomDisplay').textContent=NOTAS[(0+currentTomSteps+120)%12];
+  document.getElementById('bandaBar').style.display=fromBanda||isBandaMode?'flex':'none';
+  renderCapo(); renderSong();
+  document.getElementById('screenList').classList.remove('active');
+  document.getElementById('screenBanda').classList.remove('active');
+  document.getElementById('screenSong').classList.add('active');
+  window.scrollTo(0,0);
+  if(fromBanda||isBandaMode) broadcast({type:'song', songId:id, tomSteps:currentTomSteps, capo:currentCapo});
+}
+function backFromSong(){
+  if(isBandaMode){ document.getElementById('screenSong').classList.remove('active'); document.getElementById('screenBanda').classList.add('active'); }
+  else{ document.getElementById('screenSong').classList.remove('active'); document.getElementById('screenList').classList.add('active'); renderList(); }
+  if(isPlaying){ clearInterval(playInterval); isPlaying=false; document.getElementById('playBtn').textContent='▶ Play'; }
+}
+function renderCapo(){
+  let h=''; for(let i=0;i<=7;i++) h+=`<button class="capo-btn ${i===currentCapo?'active':''}" onclick="setCapo(${i})">${i}</button>`;
+  document.getElementById('capoBtns').innerHTML=h;
+}
+function getTransposed(){
+  if(!currentSong) return '';
+  let steps=currentTomSteps - currentCapo;
+  return currentSong.cifra.split('\n').map(line=>{
+    if(line.trim().startsWith('[')) return line;
+    let chordCount=(line.match(/\b[A-G][#b]?/g)||[]).length;
+    let isLyric=/[a-z]{4,}/.test(line) && line.length>25;
+    if(chordCount>=1 && (!isLyric || chordCount>=2 || line.trim().length<30)){
+      return line.replace(/([A-G][#b]?m?7?M?\/?[A-G]?[#b]?m?\d*)/g, m=>{
+        if(m.length>7) return m;
+        if(m==='A'||m==='E') return m;
+        return transposeChord(m, steps);
+      });
+    }
+    return line;
+  }).join('\n');
+}
+function renderSong(){
+  let cifra=getTransposed();
+  let html='';
+  for(let line of cifra.split('\n')){
+    if(!line.trim()){ html+='<div style="height:10px"></div>'; continue; }
+    if(line.trim().startsWith('[')){ html+=`<div class="bar">${line.replace(/\[|\]/g,'')}</div>`; }
+    else if(/^[A-G\s\/#b0-9mM7]+$/.test(line.trim()) && line.trim().length<50){
+      let chords=line.replace(/([A-G][#b]?[^\s]*)/g,'<span class="chord">$1</span>');
+      html+=`<div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:12px;font-weight:800;font-family:monospace;font-size:${fontSize+1}px">${chords}</div>`;
+    }else{ html+=`<div style="font-size:${fontSize}px;line-height:1.6;margin-bottom:10px">${line}</div>`; }
+  }
+  document.getElementById('songContent').innerHTML=html;
+}
+function changeTom(dir){
+  currentTomSteps+=dir;
+  let tom=NOTAS[(0+currentTomSteps+120)%12];
+  document.getElementById('tomDisplay').textContent=tom;
+  document.getElementById('songArtist').textContent=`${currentSong.artist} • Pasta: ${currentSong.folder} • Tom: ${tom} | Capo: ${currentCapo}`;
+  renderSong(); broadcast({type:'tom', steps:currentTomSteps}); showToast('Tom: '+tom);
+}
+function setCapo(n){
+  currentCapo=n; renderCapo();
+  document.getElementById('songArtist').textContent=`${currentSong.artist} • Pasta: ${currentSong.folder} • Tom: ${document.getElementById('tomDisplay').textContent} | Capo: ${n}`;
+  renderSong(); broadcast({type:'capo', capo:n}); showToast('Capo: '+n);
+}
+function togglePlay(){
+  let btn=document.getElementById('playBtn');
+  if(isPlaying){ clearInterval(playInterval); btn.textContent='▶ Play'; isPlaying=false; broadcast({type:'play', playing:false}); }
+  else{ btn.textContent='⏸ Pausar'; isPlaying=true; playInterval=setInterval(()=>window.scrollBy(0,1), 100/speed); broadcast({type:'play', playing:true}); }
+}
+function copyBandaLink(){ let inp=document.getElementById('bandaLink'); inp.select(); document.execCommand('copy'); showToast('Link copiado!'); }
+function shareWhatsApp(){ let link=document.getElementById('bandaLink').value; let msg=encodeURIComponent('🎸 Entra na banda ao vivo: '+link); window.open('https://wa.me/?text='+msg,'_blank'); }
+function generateQR(){
+  let area=document.getElementById('qrArea');
+  area.style.display=area.style.display==='none'?'block':'none';
+  if(area.style.display==='block'){
+    let link=document.getElementById('bandaLink').value;
+    let canvas=document.getElementById('qrCanvas');
+    let img=new Image();
+    img.onload=function(){ let ctx=canvas.getContext('2d'); canvas.width=200; canvas.height=200; ctx.drawImage(img,0,0,200,200); };
+    img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(link);
+  }
+}
+function doImportLink(){
+  let folder=getSelectedFolder();
+  if(!folder) return;
+  let url=document.getElementById('urlInput').value.trim();
+  let st=document.getElementById('status');
+  if(!url){ showToast('Cole o link'); return; }
+  st.style.display='block'; st.style.background='#fef3c7'; st.textContent='Baixando em '+folder+'...';
+  let proxies=['https://api.allorigins.win/raw?url=','https://corsproxy.io/?'];
+  let tryProxy=(i)=>{
+    if(i>=proxies.length){ st.style.background='#fee2e2'; st.textContent='Bloqueado, use colar'; return; }
+    fetch(proxies[i]+encodeURIComponent(url)).then(r=>r.text()).then(html=>{
+      let doc=new DOMParser().parseFromString(html,'text/html');
+      let pre=doc.querySelector('pre');
+      let cifra=pre?pre.innerText:'';
+      let title=doc.querySelector('h1')?doc.querySelector('h1').innerText:'Importada';
+      if(!cifra||cifra.length<20){ tryProxy(i+1); return; }
+      let ns={id:Date.now(),title:title.substring(0,60),artist:folder,folder:folder,cifra:cifra.substring(0,15000)};
+      songs.unshift(ns); save(); st.style.background='#dcfce7'; st.textContent='✅ Salvo em '+folder;
+      setTimeout(()=>{ closeImportModal(); openSong(ns.id, isBandaMode); st.style.display='none'; document.getElementById('urlInput').value=''; filterFolder(folder); },800);
+    }).catch(()=>tryProxy(i+1));
+  };
+  tryProxy(0);
+}
+function importManual(){
+  let folder=getSelectedFolder();
+  if(!folder) return;
+  let txt=document.getElementById('manual').value.trim();
+  if(txt.length<10){ alert('Cole a cifra'); return; }
+  let ns={id:Date.now(),title:'Importada - '+new Date().toLocaleDateString(),artist:folder,folder:folder,cifra:txt};
+  songs.unshift(ns); save(); document.getElementById('manual').value=''; closeImportModal(); renderList(); renderBandaList(); openSong(ns.id, isBandaMode); filterFolder(folder); showToast('✅ Salvo em '+folder);
+}
+function openNew(){ document.getElementById('editTitle').value=''; document.getElementById('editFolderSelect').value='Gospel'; document.getElementById('editCifra').value='[INTRO]\nC  Am'; document.getElementById('editModal').classList.add('show'); }
+function closeEdit(){ document.getElementById('editModal').classList.remove('show'); }
+function saveEdit(){
+  let t=document.getElementById('editTitle').value.trim()||'Sem título';
+  let selFolder=document.getElementById('editFolderSelect').value;
+  let c=document.getElementById('editCifra').value.trim();
+  if(!c) return;
+  if(currentSong && document.getElementById('screenSong').classList.contains('active')){
+    currentSong.title=t; currentSong.artist=selFolder; currentSong.folder=selFolder; currentSong.cifra=c; document.getElementById('songTitle').textContent=t; save(); renderSong();
+  }else{ songs.unshift({id:Date.now(),title:t,artist:selFolder,folder:selFolder,cifra:c}); save(); renderList(); renderBandaList(); }
+  closeEdit(); showToast('✅ Salvo em '+selFolder); filterFolder(selFolder);
+}
+renderList();
+renderBandMembers();
+</script>
+</body>
+</html>
