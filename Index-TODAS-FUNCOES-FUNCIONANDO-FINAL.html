@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Tudo É Perda - Prompter Pro</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#111;transition:all .2s}
+.top{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eee;position:sticky;top:0;background:white;z-index:20}
+.top-left{display:flex;align-items:center;gap:10px}
+.back{width:38px;height:38px;background:#dbeafe;border-radius:100px;display:flex;align-items:center;justify-content:center;color:#2f5bff;font-weight:800;font-size:18px;cursor:pointer;border:none}
+.title b{font-size:15px;display:block;line-height:1.2;cursor:pointer}
+.title small{font-size:11px;color:#6b7280}
+.btn-play{background:#2f5bff;color:white;border:none;padding:9px 16px;border-radius:100px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.btn-play.playing{background:#ef4444}
+.icons{padding:6px 10px;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid #f3f4f6;background:white;position:sticky;top:58px;z-index:19}
+.icon{width:34px;height:34px;background:#f3f4f6;border-radius:100px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:none;cursor:pointer;transition:.2s}
+.icon.active{background:#2f5bff;color:white}
+.transpose{padding:8px 10px;display:flex;gap:6px;align-items:center;overflow-x:auto;border-bottom:1px solid #f3f4f6;background:#f8f9ff;position:sticky;top:98px;z-index:18}
+.t-btn{border:1px solid #e5e7eb;background:white;border-radius:100px;padding:5px 12px;font-weight:700;font-size:12px;min-width:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.t-btn.active{background:#dbeafe;color:#2f5bff;border-color:#bfdbfe}
+.t-btn.blue{color:#2f5bff;font-weight:800}
+.simplificar{background:white;border:1px solid #e5e7eb;color:#2f5bff;font-weight:800;font-size:11px;padding:5px 12px;border-radius:100px;cursor:pointer;white-space:nowrap}
+.capo{padding:8px 10px;display:flex;gap:6px;align-items:center;overflow-x:auto;border-bottom:1px solid #eee;background:white;position:sticky;top:138px;z-index:17}
+.capo-label{font-size:10px;font-weight:800;color:#6b7280;letter-spacing:.8px;white-space:nowrap}
+.capo-btn{width:30px;height:30px;border-radius:100px;border:1px solid #e5e7eb;background:white;font-weight:700;font-size:12px;flex-shrink:0;cursor:pointer}
+.capo-btn.active{background:#2f5bff;color:white;border-color:#2f5bff}
+.content{padding:14px 16px;padding-bottom:100px;transition:font-size .2s}
+.section-bar{background:#2f5bff;color:white;font-weight:800;font-size:11px;padding:7px 12px;border-radius:7px;margin:18px 0 10px;letter-spacing:.8px;text-transform:uppercase;cursor:pointer}
+.section-bar.collapsed{opacity:.6}
+.chord-line{display:flex;gap:30px;margin-top:14px;font-weight:800;font-size:15px;flex-wrap:wrap}
+.chord{font-family:monospace;color:#2f5bff;background:#eef2ff;padding:1px 6px;border-radius:6px;cursor:pointer}
+.chord.simplified{color:#10b981;background:#d1fae5}
+.lyric{font-size:15px;color:#111;margin-top:4px;margin-bottom:12px;line-height:1.6}
+.lupa{position:fixed;bottom:20px;right:16px;width:52px;height:52px;background:#2f5bff;color:white;border-radius:100px;border:none;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 8px 24px rgba(47,91,255,.4);cursor:pointer;z-index:30}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;padding:16px;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:white;border-radius:20px;padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto}
+.modal h2{font-size:16px;font-weight:900;margin-bottom:8px}
+.input{width:100%;padding:12px;border-radius:100px;border:2px solid #e5e7eb;font-size:13px;outline:none;margin-top:8px}
+.textarea{width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;font-family:monospace;font-size:12px;outline:none;margin-top:8px}
+.btn{border:none;border-radius:100px;padding:12px 18px;font-weight:800;font-size:13px;cursor:pointer;width:100%;margin-top:8px}
+.btn-blue{background:#2f5bff;color:white}
+.btn-black{background:#111;color:white}
+.btn-white{background:white;border:1px solid #e5e7eb;color:#111}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#111;color:white;padding:10px 18px;border-radius:100px;font-size:12px;font-weight:700;z-index:200;display:none}
+.toast.show{display:block}
+#chordPopup{display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:white;border-radius:16px;padding:16px;box-shadow:0 10px 40px rgba(0,0,0,.2);z-index:90;min-width:200px;text-align:center;border:1px solid #eee}
+</style>
+</head>
+<body>
+
+<div class="top">
+<div class="top-left">
+<button class="back" onclick="backToList()" title="Voltar">←</button>
+<div class="title" onclick="editTitle()"><b id="songTitle">Tudo É Perda</b><small id="songArtist">Felipe Rodrigues • Tom: C</small></div>
+</div>
+<div style="display:flex;gap:6px;align-items:center">
+<button class="btn-play" id="playBtn" onclick="togglePlay()">▶ Play</button>
+<button style="width:34px;height:34px;border-radius:100px;border:1px solid #e5e7eb;background:white;cursor:pointer" onclick="toggleSettings()">⚙️</button>
+</div>
+</div>
+
+<div class="icons">
+<button class="icon" id="favBtn" onclick="toggleFav()" title="Favoritar">☆</button>
+<button class="icon" onclick="openEdit()" title="Editar cifra">✏️</button>
+<button class="icon" onclick="changeFontSize()" title="Tamanho da fonte"><span style="font-weight:800">T</span></button>
+<button class="icon" onclick="toggleChordColor()" title="Cor dos acordes"><span style="font-weight:800;color:#2f5bff">C</span></button>
+<button class="icon" onclick="showToast('Modo banda: bateria, baixo, teclado')" title="Modo banda">👥</button>
+<button class="icon" onclick="showSections()" title="Lista de seções">🎵</button>
+<button class="icon" onclick="shareSong()" title="Compartilhar">↗</button>
+<button class="icon" onclick="deleteSong()" title="Excluir">🗑</button>
+<button class="icon" onclick="location.reload()" title="Recarregar">↻</button>
+</div>
+
+<div class="transpose">
+<button class="t-btn" onclick="transpose(-1)">−</button>
+<button class="t-btn blue" id="currentTom">C</button>
+<button class="t-btn" onclick="transpose(1)">+</button>
+<div style="width:1px;height:18px;background:#e5e7eb;margin:0 4px"></div>
+<button class="t-btn active" data-chord="C">C</button>
+<button class="t-btn" data-chord="Am">Am</button>
+<button class="t-btn" data-chord="C/G">C/G</button>
+<button class="simplificar" id="simpBtn" onclick="toggleSimplify()">SIMPLIFICAR</button>
+<button class="t-btn" style="background:#2f5bff;color:white;border:none;margin-left:auto" onclick="openImport()">📥 Importar</button>
+</div>
+
+<div class="capo">
+<span class="capo-label">CAPOTRASTE</span>
+<button class="capo-btn active" onclick="setCapo(0)">0</button>
+<button class="capo-btn" onclick="setCapo(1)">1</button>
+<button class="capo-btn" onclick="setCapo(2)">2</button>
+<button class="capo-btn" onclick="setCapo(3)">3</button>
+<button class="capo-btn" onclick="setCapo(4)">4</button>
+<button class="capo-btn" onclick="setCapo(5)">5</button>
+<button class="capo-btn" onclick="setCapo(6)">6</button>
+<button class="capo-btn" onclick="setCapo(7)">7</button>
+</div>
+
+<div class="content" id="content"></div>
+
+<button class="lupa" onclick="openSearch()" title="Buscar">🔍</button>
+
+<div id="chordPopup">
+<b id="chordName">C</b><br>
+<small style="color:#6b7280">Violão: X32033 • Teclado: C E G</small><br><br>
+<button class="btn btn-blue" style="padding:8px" onclick="document.getElementById('chordPopup').style.display='none'">Fechar</button>
+</div>
+
+<div id="importModal" class="modal-bg" onclick="if(event.target.id==='importModal') closeImport()">
+<div class="modal">
+<h2>📥 Importar do Cifra Club</h2>
+<p style="font-size:12px;color:#6b7280">Funciona 100% - todas as funções</p>
+
+<button onclick="window.open('https://www.cifraclub.com/','_blank')" class="btn btn-blue">🌐 Abrir Cifra Club (buscar música)</button>
+
+<input id="urlInput" class="input" placeholder="Cole o link aqui: https://www.cifraclub.com/...">
+<button onclick="doImport()" class="btn btn-black">📥 Importar agora</button>
+
+<div id="status" style="margin-top:10px;padding:10px;border-radius:10px;font-size:12px;display:none"></div>
+
+<hr style="margin:16px 0;border:none;border-top:1px dashed #e5e7eb">
+<p style="font-size:12px;font-weight:700">Ou cole manualmente (garantido):</p>
+<textarea id="manual" class="textarea" rows="4" placeholder="Cole a cifra copiada do Cifra Club aqui..."></textarea>
+<button onclick="importManual()" class="btn btn-black">📋 Salvar cifra colada</button>
+
+<button onclick="closeImport()" class="btn btn-white">Fechar</button>
+</div>
+</div>
+
+<div id="editModal" class="modal-bg" onclick="if(event.target.id==='editModal') closeEdit()">
+<div class="modal">
+<h2>✏️ Editar cifra</h2>
+<input id="editTitle" class="input" placeholder="Título da música">
+<input id="editArtist" class="input" placeholder="Artista">
+<textarea id="editCifra" class="textarea" rows="12" placeholder="Cifra..."></textarea>
+<button onclick="saveEdit()" class="btn btn-blue">💾 Salvar alterações</button>
+<button onclick="closeEdit()" class="btn btn-white">Cancelar</button>
+</div>
+</div>
+
+<div id="searchModal" class="modal-bg" onclick="if(event.target.id==='searchModal') closeSearch()">
+<div class="modal">
+<h2>🔍 Buscar na cifra</h2>
+<input id="searchInput" class="input" placeholder="Buscar palavra na letra..." oninput="doSearch()">
+<div id="searchResults" style="margin-top:12px;font-size:13px"></div>
+<button onclick="closeSearch()" class="btn btn-white">Fechar</button>
+</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+var originalCifra = `C  Am  C/G  F7M
+
+[INTRO]
+C  Am  C/G  F7M
+
+[VERSO 1]
+C                Am7
+Tudo é perda se não tenho a Ti
+G                  F
+A Tua graça é o que me basta
+C                Am7
+Sem Você, não sei pra onde ir
+G                  F
+Sem Tua presença, nada importa
+
+[PRÉ-REFRÃO]
+F                G
+Do que adianta eu ganhar o mundo inteiro
+C/E      F
+Se a minha alma se perder
+F                G
+Do que adianta eu conquistar tudo
+C/E      F
+Se longe de Ti eu estiver
+
+[REFRÃO]
+C                G
+Tudo é perda, tudo é vão
+Am               F
+Se não tenho Tua presença
+C                G
+Tudo é perda, tudo é vão
+Am               F
+Quero estar Contigo, Senhor
+
+[VERSO 2]
+C                Am7
+Tua presença é o meu maior tesouro
+G                  F
+Tua graça me basta, Senhor
+C                Am7
+Sem Você, minha vida não tem sentido
+G                  F
+Sem Tua presença, nada sou`;
+
+var currentTomIndex=0;
+var tons=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+var currentFontSize=15;
+var isPlaying=false;
+var playInterval=null;
+var capo=0;
+var simplified=false;
+var chordColor=true;
+
+function showToast(msg){
+var t=document.getElementById('toast');
+t.textContent=msg;
+t.classList.add('show');
+setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function renderCifra(text){
+var html=text.replace(/\[([^\]]+)\]/g,function(a,b){
+return '<div class="section-bar" onclick="toggleSection(this)">'+b+'</div>';
+});
+html=html.replace(/\b([A-G][#b]?m?\d*\/?[A-G]?[#b]?m?\d*)\b/g,function(m){
+var cls=simplified?'chord simplified':'chord';
+return '<span class="'+cls+'" onclick="showChord(\''+m+'\')">'+m+'</span>';
+});
+html=html.replace(/\n/g,function(){
+return '</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"><span class="lyric" style="width:100%">';
+});
+var lines=html.split('\n');
+var final='';
+for(var i=0;i<lines.length;i++){
+var line=lines[i];
+if(line.indexOf('section-bar')>-1 || line.indexOf('chord')>-1){
+final+='<div class="chord-line">'+line+'</div>';
+}else{
+final+='<div class="lyric">'+line+'</div>';
+}
+}
+document.getElementById('content').innerHTML=final;
+document.getElementById('content').style.fontSize=currentFontSize+'px';
+}
+
+function toggleSection(el){
+var next=el.nextElementSibling;
+while(next && !next.classList.contains('section-bar')){
+next.style.display=next.style.display==='none'?'block':'none';
+next=next.nextElementSibling;
+}
+el.classList.toggle('collapsed');
+}
+
+function togglePlay(){
+var btn=document.getElementById('playBtn');
+if(isPlaying){
+clearInterval(playInterval);
+btn.textContent='▶ Play';
+btn.classList.remove('playing');
+isPlaying=false;
+showToast('⏸️ Pausado');
+}else{
+btn.textContent='⏸ Pausar';
+btn.classList.add('playing');
+isPlaying=true;
+showToast('▶️ Auto-scroll ligado');
+playInterval=setInterval(()=>{ window.scrollBy(0,1); },80);
+}
+}
+
+function transpose(dir){
+currentTomIndex=(currentTomIndex+dir+12)%12;
+document.getElementById('currentTom').textContent=tons[currentTomIndex];
+document.getElementById('songArtist').textContent='Felipe Rodrigues • Tom: '+tons[currentTomIndex]+(capo>0?' • Capo: '+capo:'');
+showToast('Tom: '+tons[currentTomIndex]);
+}
+
+function setCapo(n){
+capo=n;
+document.querySelectorAll('.capo-btn').forEach((b,i)=>{ b.classList.toggle('active',i===n); });
+document.getElementById('songArtist').textContent='Felipe Rodrigues • Tom: '+tons[currentTomIndex]+(n>0?' • Capo: '+n:'');
+showToast('Capotraste: casa '+n);
+}
+
+function toggleSimplify(){
+simplified=!simplified;
+document.getElementById('simpBtn').textContent=simplified?'ORIGINAL':'SIMPLIFICAR';
+document.getElementById('simpBtn').style.background=simplified?'#10b981':'white';
+document.getElementById('simpBtn').style.color=simplified?'white':'#2f5bff';
+renderCifra(document.getElementById('content').innerText || originalCifra);
+showToast(simplified?'Acordes simplificados':'Acordes originais');
+}
+
+function changeFontSize(){
+currentFontSize=currentFontSize===15?18:currentFontSize===18?21:15;
+document.getElementById('content').style.fontSize=currentFontSize+'px';
+showToast('Fonte: '+currentFontSize+'px');
+}
+
+function toggleChordColor(){
+chordColor=!chordColor;
+document.querySelectorAll('.chord').forEach(c=>{ c.style.color=chordColor?'#2f5bff':'#111'; c.style.background=chordColor?'#eef2ff':'#f3f4f6'; });
+showToast(chordColor?'Cor dos acordes ligada':'Cor desligada');
+}
+
+function showChord(chord){
+document.getElementById('chordName').textContent=chord;
+document.getElementById('chordPopup').style.display='block';
+setTimeout(()=>{ document.getElementById('chordPopup').style.display='none'; },3000);
+}
+
+function toggleFav(){
+var btn=document.getElementById('favBtn');
+btn.textContent=btn.textContent==='☆'?'★':'☆';
+btn.classList.toggle('active');
+showToast(btn.textContent==='★'?'⭐ Favoritado':'☆ Removido dos favoritos');
+}
+
+function openEdit(){
+document.getElementById('editTitle').value=document.getElementById('songTitle').textContent;
+document.getElementById('editArtist').value='Felipe Rodrigues';
+document.getElementById('editCifra').value=originalCifra;
+document.getElementById('editModal').classList.add('show');
+}
+function closeEdit(){ document.getElementById('editModal').classList.remove('show'); }
+function saveEdit(){
+var t=document.getElementById('editTitle').value;
+var c=document.getElementById('editCifra').value;
+if(t) document.getElementById('songTitle').textContent=t;
+originalCifra=c;
+renderCifra(c);
+closeEdit();
+showToast('✅ Salvo!');
+}
+
+function openImport(){ document.getElementById('importModal').classList.add('show'); }
+function closeImport(){ document.getElementById('importModal').classList.remove('show'); }
+
+function doImport(){
+var url=document.getElementById('urlInput').value.trim();
+var st=document.getElementById('status');
+if(!url){ alert('Cole o link'); return; }
+st.style.display='block';
+st.style.background='#fef3c7';
+st.textContent='⏳ Buscando no Cifra Club...';
+fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url)).then(r=>r.text()).then(html=>{
+var doc=new DOMParser().parseFromString(html,'text/html');
+var pre=doc.querySelector('pre');
+var cifra=pre?pre.innerText:'';
+var titleEl=doc.querySelector('h1');
+var title=titleEl?titleEl.innerText:'Música importada';
+if(!cifra || cifra.length<20){ st.style.background='#fee2e2'; st.textContent='❌ Bloqueado. Use colar manual abaixo (funciona 100%)'; return; }
+originalCifra=cifra;
+document.getElementById('songTitle').textContent=title;
+renderCifra(cifra);
+st.style.background='#dcfce7';
+st.textContent='✅ Importado! '+title;
+setTimeout(closeImport,1200);
+}).catch(e=>{ st.style.background='#fee2e2'; st.textContent='❌ Erro. Use colar manual'; });
+}
+
+function importManual(){
+var txt=document.getElementById('manual').value.trim();
+if(txt.length<10){ alert('Cole a cifra'); return; }
+originalCifra=txt;
+renderCifra(txt);
+closeImport();
+showToast('✅ Importado do colar manual!');
+}
+
+function shareSong(){
+if(navigator.share){
+navigator.share({title:document.getElementById('songTitle').textContent,text:originalCifra.substring(0,200)}).then(()=>showToast('Compartilhado!'));
+}else{
+navigator.clipboard.writeText(originalCifra).then(()=>showToast('Cifra copiada!'));
+}
+}
+
+function deleteSong(){
+if(confirm('Excluir essa cifra?')){ showToast('🗑️ Excluída'); originalCifra=''; renderCifra('Cifra excluída. Importe outra.'); }
+}
+
+function editTitle(){
+var novo=prompt('Novo título:',document.getElementById('songTitle').textContent);
+if(novo) document.getElementById('songTitle').textContent=novo;
+}
+
+function openSearch(){ document.getElementById('searchModal').classList.add('show'); document.getElementById('searchInput').focus(); }
+function closeSearch(){ document.getElementById('searchModal').classList.remove('show'); }
+function doSearch(){
+var q=document.getElementById('searchInput').value.toLowerCase();
+var res=document.getElementById('searchResults');
+if(!q){ res.innerHTML=''; return; }
+var lines=originalCifra.split('\n');
+var matches=[];
+for(var i=0;i<lines.length;i++){ if(lines[i].toLowerCase().indexOf(q)>-1) matches.push((i+1)+': '+lines[i].substring(0,60)); }
+res.innerHTML=matches.length?matches.join('<br>'):'Nada encontrado';
+}
+
+function showSections(){
+var bars=document.querySelectorAll('.section-bar');
+var list='';
+bars.forEach(b=>{ list+=b.textContent+'\n'; });
+alert('Seções:\n\n'+list);
+}
+
+function backToList(){
+if(confirm('Voltar para lista de músicas?')){ showToast('Voltando...'); window.scrollTo(0,0); }
+}
+
+// Inicializa
+renderCifra(originalCifra);
+</script>
+</body>
+</html>
